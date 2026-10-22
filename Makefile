@@ -3,7 +3,7 @@ ifneq (,$(wildcard .env))
     export
 endif
 
-.PHONY: api sqlc migration-up migration-down migration-new db db-down seed DB_CHECK
+.PHONY: api podlet sqlc migration-up migration-down migration-new db db-down seed DB_CHECK
 .DEFAULT_GOAL := api
 
 POSTGRES_HOST ?= localhost
@@ -15,6 +15,10 @@ POSTGRES_ENV = PGHOST="$(POSTGRES_HOST)" PGPORT="$(POSTGRES_PORT)" PGUSER="$(POS
 
 api:
 	go run cmd/api/main.go
+
+
+podlet:
+	go run cmd/cli/main.go $(args)
 
 
 # database related commands
