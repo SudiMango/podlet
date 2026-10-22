@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"log"
+
+	"github.com/SudiMango/podlet/internal/cli"
+	"github.com/joho/godotenv"
+)
 
 func main() {
-	fmt.Println("Hello, world!")
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found.")
+	}
+
+	cli.Execute()
 }
