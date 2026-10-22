@@ -1,0 +1,16 @@
+name: podlet
+
+services:
+  db:
+    image: postgres:17
+    restart: no
+    env_file:
+      - .env
+    ports:
+      - 5433:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+    name: podlet-postgres-data
