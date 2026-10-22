@@ -3,12 +3,19 @@ ifneq (,$(wildcard .env))
     export
 endif
 
-.PHONY: sqlc migration-up migration-down migration-new db db-down seed DB_CHECK
-.DEFAULT_GOAL := db
+.PHONY: api sqlc migration-up migration-down migration-new db db-down seed DB_CHECK
+.DEFAULT_GOAL := api
 
 POSTGRES_HOST ?= localhost
 POSTGRES_PORT ?= 5433
 POSTGRES_ENV = PGHOST="$(POSTGRES_HOST)" PGPORT="$(POSTGRES_PORT)" PGUSER="$(POSTGRES_USER)" PGPASSWORD="$(POSTGRES_PASSWORD)" PGDATABASE="$(POSTGRES_DB)" PGSSLMODE=disable
+
+
+# run apps
+
+api:
+	go run cmd/api/main.go
+
 
 # database related commands
 
