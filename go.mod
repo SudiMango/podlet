@@ -4,9 +4,14 @@ go 1.27.1
 
 require (
 	github.com/go-chi/chi/v5 v5.5.0
+	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.10.2
+	github.com/thecodearcher/limen v0.2.3
+	github.com/thecodearcher/limen/adapters/sql v0.2.1
+	github.com/thecodearcher/limen/plugins/oauth v0.2.1
+	github.com/thecodearcher/limen/plugins/oauth-github v0.2.1
 	go.uber.org/fx v1.24.0
 )
 
@@ -25,7 +30,6 @@ require (
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/go-sql-driver/mysql v1.10.0 // indirect
 	github.com/google/cel-go v0.28.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -33,6 +37,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jackc/tern/v2 v2.4.3 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/ncruces/go-sqlite3 v0.32.0 // indirect
@@ -61,6 +66,7 @@ require (
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
