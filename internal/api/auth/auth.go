@@ -38,27 +38,23 @@ func NewLimen(pool *pgxpool.Pool) (*limen.Limen, error) {
 	}
 
 	db := stdlib.OpenDBFromPool(pool)
+	githubProvider := oauthgithub.New(oauthgithub.WithScopes())
 
 	return limen.New(&limen.Config{
 		BaseURL:  baseURL,
 		Database: sqladapter.NewPostgreSQL(db),
+		Session: limen.NewDefaultSessionConfig(
+			limen.WithBearerEnabled(),
+		),
 		Schema: limen.NewDefaultSchemaConfig(
 			limen.WithSchemaIDGenerator(uuidGenerator{}),
 		),
 		Plugins: []limen.Plugin{
 			oauth.New(
-				oauth.WithProviders(
-					oauthgithub.New(
-						oauthgithub.WithScopes(
-							"read:user",
-							"user:email",
-							"repo",
-							"read:org",
-						),
-					),
-				),
+				oauth.WithProviders(githubProvider),
 				oauth.WithMapProfileToUser(githubProfileFields),
 			),
+			newGitHubDevicePlugin(os.Getenv("GITHUB_CLIENT_ID"), githubProvider),
 		},
 	})
 }
@@ -66,7 +62,10 @@ func NewLimen(pool *pgxpool.Pool) (*limen.Limen, error) {
 func githubProfileFields(profile *limen.OAuthAccountProfile) map[string]any {
 	name := strings.Fields(profile.Name)
 	if len(name) == 0 {
-		return nil
+		if login, ok := profile.Raw["login"].(string); ok && login != "" {
+			return map[string]any{"first_name": login}
+		}
+		return map[string]any{"first_name": "GitHub user"}
 	}
 
 	fields := map[string]any{"first_name": name[0]}

@@ -13,6 +13,7 @@ require (
 	github.com/thecodearcher/limen/plugins/oauth v0.2.1
 	github.com/thecodearcher/limen/plugins/oauth-github v0.2.1
 	go.uber.org/fx v1.24.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
@@ -66,7 +67,6 @@ require (
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
