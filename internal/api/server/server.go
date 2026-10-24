@@ -48,8 +48,14 @@ func provideRouter(params RouterParams) *chi.Mux {
 
 		r.Route("/servers", func(r chi.Router) {
 			r.Post("/add", params.ServerHandler.CreatePendingServerByUserId)
+			r.Get("/pending", params.ServerHandler.GetValidPendingServersByUserId)
+			r.Get("/pending/{pendingServerId}", params.ServerHandler.GetValidPendingServerByUserIdAndPendingServerId)
+			r.Delete("/pending/{pendingServerId}", params.ServerHandler.DeletePendingServerByUserIdAndPendingServerId)
+
 			r.Get("/", params.ServerHandler.GetServersByUserId)
 			r.Get("/{serverId}", params.ServerHandler.GetServerByUserIdAndServerId)
+			r.Patch("/{serverId}", params.ServerHandler.UpdateServerByUserIdAndServerId)
+			r.Delete("/{serverId}", params.ServerHandler.DeleteServerByUserIdAndServerId)
 		})
 	})
 

@@ -19,6 +19,10 @@ func NewServerRepository(store *db.Queries) *ServerRepository {
 	}
 }
 
+/*
+	Pending server functions
+*/
+
 func (r *ServerRepository) CreatePendingServerByUserId(ctx context.Context, userId string, request dto.CreatePendingServerRequest) (*contract.PendingServerResponse, error) {
 	var pgUserId pgtype.UUID
 
@@ -59,7 +63,24 @@ func (r *ServerRepository) GetValidPendingServersByUserId(ctx context.Context, u
 		return nil, err
 	}
 
-	return nil, nil
+	done, err := r.store.GetValidPendingServersByUserId(ctx, pgUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	var response contract.PendingServersResponse
+	for _, s := range done {
+		sTemp := contract.PendingServerResponse{
+			Id:                s.ID,
+			UserId:            s.UserID.String(),
+			CreatedAt:         s.CreatedAt.Time,
+			ExpiresAt:         s.ExpiresAt.Time,
+			RegistrationToken: nil,
+		}
+		response = append(response, sTemp)
+	}
+
+	return &response, nil
 }
 
 func (r *ServerRepository) GetValidPendingServerByUserIdAndPendingServerId(ctx context.Context, userId string, pendingServerId string) (*contract.PendingServerResponse, error) {
@@ -69,7 +90,21 @@ func (r *ServerRepository) GetValidPendingServerByUserIdAndPendingServerId(ctx c
 		return nil, err
 	}
 
-	return nil, nil
+	done, err := r.store.GetValidPendingServerByUserIdAndPendingServerId(ctx, db.GetValidPendingServerByUserIdAndPendingServerIdParams{
+		UserID: pgUserId,
+		ID:     pendingServerId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract.PendingServerResponse{
+		Id:                done.ID,
+		UserId:            done.UserID.String(),
+		CreatedAt:         done.CreatedAt.Time,
+		ExpiresAt:         done.ExpiresAt.Time,
+		RegistrationToken: nil,
+	}, nil
 }
 
 func (r *ServerRepository) GetValidPendingServerRegistrationTokenHash(ctx context.Context, registrationTokenHash string) (*contract.PendingServerResponse, error) {
@@ -99,6 +134,10 @@ func (r *ServerRepository) DeletePendingServerByUserIdAndPendingServerId(ctx con
 		ID:     pendingServerId,
 	})
 }
+
+/*
+	Server functions
+*/
 
 func (r *ServerRepository) CreateServerByUserId(ctx context.Context, userId string, request dto.CreateServerRequest) (*contract.ServerResponse, error) {
 	var pgUserId pgtype.UUID
@@ -188,14 +227,30 @@ func (r *ServerRepository) GetServerByUserIdAndServerId(ctx context.Context, use
 	}, nil
 }
 
-func (r *ServerRepository) UpdateServerByUserIdAndServerId(ctx context.Context, userId string, serverId string, request contract.UpdateServerRequest) (*contract.ServerResponse, error) {
+func (r *ServerRepository) UpdateServerByUserIdAndServerId(ctx context.Context, userId string, serverId string, name string) (*contract.ServerResponse, error) {
 	var pgUserId pgtype.UUID
 
 	if err := pgUserId.Scan(userId); err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	done, err := r.store.UpdateServerByUserIdAndServerId(ctx, db.UpdateServerByUserIdAndServerIdParams{
+		UserID: pgUserId,
+		ID:     serverId,
+		Name:   name,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract.ServerResponse{
+		Id:        done.ID,
+		Name:      done.Name,
+		UserId:    done.UserID.String(),
+		CreatedAt: done.CreatedAt.Time,
+		UpdatedAt: done.UpdatedAt.Time,
+		Token:     nil,
+	}, nil
 }
 
 func (r *ServerRepository) DeleteServerByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
@@ -205,5 +260,8 @@ func (r *ServerRepository) DeleteServerByUserIdAndServerId(ctx context.Context, 
 		return err
 	}
 
-	return nil
+	return r.store.DeleteServerByUserIdAndServerId(ctx, db.DeleteServerByUserIdAndServerIdParams{
+		UserID: pgUserId,
+		ID:     serverId,
+	})
 }

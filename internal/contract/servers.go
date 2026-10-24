@@ -10,7 +10,7 @@ type CreateServerRequest struct {
 }
 
 type UpdateServerRequest struct {
-	Name string `json:"name"`
+	Name *string `json:"name"`
 }
 
 // Response

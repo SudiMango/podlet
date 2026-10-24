@@ -25,6 +25,10 @@ func NewServerService(serverRepository *repository.ServerRepository) *ServerServ
 	}
 }
 
+/*
+	Pending server functions
+*/
+
 func (s *ServerService) CreatePendingServerByUserId(ctx context.Context, userId string) (*contract.PendingServerResponse, error) {
 	token, err := util.GenerateToken()
 	if err != nil {
@@ -49,6 +53,22 @@ func (s *ServerService) CreatePendingServerByUserId(ctx context.Context, userId 
 	done.RegistrationToken = &token
 	return done, nil
 }
+
+func (s *ServerService) GetValidPendingServersByUserId(ctx context.Context, userId string) (*contract.PendingServersResponse, error) {
+	return s.serverRepository.GetValidPendingServersByUserId(ctx, userId)
+}
+
+func (s *ServerService) GetValidPendingServerByUserIdAndPendingServerId(ctx context.Context, userId string, pendingServerId string) (*contract.PendingServerResponse, error) {
+	return s.serverRepository.GetValidPendingServerByUserIdAndPendingServerId(ctx, userId, pendingServerId)
+}
+
+func (s *ServerService) DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, userId string, pendingServerId string) error {
+	return s.serverRepository.DeletePendingServerByUserIdAndPendingServerId(ctx, userId, pendingServerId)
+}
+
+/*
+	Server functions
+*/
 
 func (s *ServerService) CreateServerByUserId(ctx context.Context, request contract.CreateServerRequest) (*contract.ServerResponse, error) {
 
@@ -95,4 +115,16 @@ func (s *ServerService) GetServersByUserId(ctx context.Context, userId string) (
 
 func (s *ServerService) GetServerByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*contract.ServerResponse, error) {
 	return s.serverRepository.GetServerByUserIdAndServerId(ctx, userId, serverId)
+}
+
+func (s *ServerService) UpdateServerByUserIdAndServerId(ctx context.Context, userId string, serverId string, request contract.UpdateServerRequest) (*contract.ServerResponse, error) {
+	if request.Name == nil {
+		return s.serverRepository.GetServerByUserIdAndServerId(ctx, userId, serverId)
+	}
+
+	return s.serverRepository.UpdateServerByUserIdAndServerId(ctx, userId, serverId, *request.Name)
+}
+
+func (s *ServerService) DeleteServerByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
+	return s.serverRepository.DeleteServerByUserIdAndServerId(ctx, userId, serverId)
 }
