@@ -61,7 +61,7 @@ case "$(uname -m)" in
         ;;
 esac
 
-readonly BINARY_NAME="podlet-agent-linux-${ARCH}"
+readonly BINARY_NAME="podlet-server-agent-linux-${ARCH}"
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
