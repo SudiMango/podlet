@@ -9,6 +9,7 @@ import (
 	"github.com/SudiMango/podlet/internal/api/util"
 	"github.com/SudiMango/podlet/internal/contract"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 )
 
 type ServerHandler struct {
@@ -152,6 +153,7 @@ Raises:
 
 	400: pendingServerId is missing
 	401: unauthorized user
+	404: pending server not found
 	500: unable to delete the pending server
 */
 func (h *ServerHandler) DeletePendingServerByUserIdAndPendingServerId(w http.ResponseWriter, r *http.Request) {
@@ -168,6 +170,11 @@ func (h *ServerHandler) DeletePendingServerByUserIdAndPendingServerId(w http.Res
 	}
 
 	if err := h.serverService.DeletePendingServerByUserIdAndPendingServerId(r.Context(), userId, pendingServerId); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			util.SendError(w, http.StatusNotFound, errors.New("pending server not found"))
+			return
+		}
+
 		util.SendError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -353,6 +360,7 @@ Raises:
 
 	400: serverId is missing
 	401: unauthorized user
+	404: registered server not found
 	500: unable to delete the registered server
 */
 func (h *ServerHandler) DeleteServerByUserIdAndServerId(w http.ResponseWriter, r *http.Request) {
@@ -369,6 +377,11 @@ func (h *ServerHandler) DeleteServerByUserIdAndServerId(w http.ResponseWriter, r
 	}
 
 	if err := h.serverService.DeleteServerByUserIdAndServerId(r.Context(), userId, serverId); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			util.SendError(w, http.StatusNotFound, errors.New("registered server not found"))
+			return
+		}
+
 		util.SendError(w, http.StatusInternalServerError, err)
 		return
 	}

@@ -93,7 +93,7 @@ func (q *Queries) CreateServerByUserId(ctx context.Context, arg CreateServerByUs
 	return i, err
 }
 
-const deletePendingServerByUserIdAndPendingServerId = `-- name: DeletePendingServerByUserIdAndPendingServerId :exec
+const deletePendingServerByUserIdAndPendingServerId = `-- name: DeletePendingServerByUserIdAndPendingServerId :execrows
 DELETE FROM pending_servers
 WHERE user_id = $1
     AND id = $2
@@ -104,12 +104,15 @@ type DeletePendingServerByUserIdAndPendingServerIdParams struct {
 	ID     string
 }
 
-func (q *Queries) DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) error {
-	_, err := q.db.Exec(ctx, deletePendingServerByUserIdAndPendingServerId, arg.UserID, arg.ID)
-	return err
+func (q *Queries) DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deletePendingServerByUserIdAndPendingServerId, arg.UserID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteServerByUserIdAndServerId = `-- name: DeleteServerByUserIdAndServerId :exec
+const deleteServerByUserIdAndServerId = `-- name: DeleteServerByUserIdAndServerId :execrows
 DELETE FROM servers
 WHERE user_id = $1
     AND id = $2
@@ -120,9 +123,12 @@ type DeleteServerByUserIdAndServerIdParams struct {
 	ID     string
 }
 
-func (q *Queries) DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) error {
-	_, err := q.db.Exec(ctx, deleteServerByUserIdAndServerId, arg.UserID, arg.ID)
-	return err
+func (q *Queries) DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteServerByUserIdAndServerId, arg.UserID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const getServerByUserIdAndServerId = `-- name: GetServerByUserIdAndServerId :one

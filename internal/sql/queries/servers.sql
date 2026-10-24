@@ -27,7 +27,7 @@ WHERE registration_token_hash = $1
     AND expires_at > NOW()
 FOR UPDATE;
 
--- name: DeletePendingServerByUserIdAndPendingServerId :exec
+-- name: DeletePendingServerByUserIdAndPendingServerId :execrows
 DELETE FROM pending_servers
 WHERE user_id = $1
     AND id = $2;
@@ -63,7 +63,7 @@ WHERE user_id = $1
     AND id = $2
 RETURNING *;
 
--- name: DeleteServerByUserIdAndServerId :exec
+-- name: DeleteServerByUserIdAndServerId :execrows
 DELETE FROM servers
 WHERE user_id = $1
     AND id = $2;

@@ -14,6 +14,7 @@ func (ServerCommand) Command() *cobra.Command {
 		AddServerCommand{}.Command(),
 		GetServerCommand{}.Command(),
 		UpdateServerCommand{}.Command(),
+		DeleteServerCommand{}.Command(),
 	)
 
 	return cmd

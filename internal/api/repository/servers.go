@@ -6,6 +6,7 @@ import (
 	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/contract"
 	db "github.com/SudiMango/podlet/internal/sql/database"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -129,10 +130,18 @@ func (r *ServerRepository) DeletePendingServerByUserIdAndPendingServerId(ctx con
 		return err
 	}
 
-	return r.store.DeletePendingServerByUserIdAndPendingServerId(ctx, db.DeletePendingServerByUserIdAndPendingServerIdParams{
+	rowsDeleted, err := r.store.DeletePendingServerByUserIdAndPendingServerId(ctx, db.DeletePendingServerByUserIdAndPendingServerIdParams{
 		UserID: pgUserId,
 		ID:     pendingServerId,
 	})
+	if err != nil {
+		return err
+	}
+	if rowsDeleted == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }
 
 /*
@@ -260,8 +269,16 @@ func (r *ServerRepository) DeleteServerByUserIdAndServerId(ctx context.Context, 
 		return err
 	}
 
-	return r.store.DeleteServerByUserIdAndServerId(ctx, db.DeleteServerByUserIdAndServerIdParams{
+	rowsDeleted, err := r.store.DeleteServerByUserIdAndServerId(ctx, db.DeleteServerByUserIdAndServerIdParams{
 		UserID: pgUserId,
 		ID:     serverId,
 	})
+	if err != nil {
+		return err
+	}
+	if rowsDeleted == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }
