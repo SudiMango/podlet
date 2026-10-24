@@ -16,6 +16,7 @@ type Querier interface {
 	DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) (int64, error)
 	DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) (int64, error)
 	GetPodletProfileByUserId(ctx context.Context, id pgtype.UUID) (GetPodletProfileByUserIdRow, error)
+	GetServerByTokenHash(ctx context.Context, tokenHash string) (Server, error)
 	GetServerByUserIdAndServerId(ctx context.Context, arg GetServerByUserIdAndServerIdParams) (Server, error)
 	GetServersByUserId(ctx context.Context, userID pgtype.UUID) ([]Server, error)
 	GetValidPendingServerByUserIdAndPendingServerId(ctx context.Context, arg GetValidPendingServerByUserIdAndPendingServerIdParams) (PendingServer, error)
@@ -23,6 +24,7 @@ type Querier interface {
 	GetValidPendingServersByUserId(ctx context.Context, userID pgtype.UUID) ([]PendingServer, error)
 	PingDatabase(ctx context.Context) (int32, error)
 	UpdateServerByUserIdAndServerId(ctx context.Context, arg UpdateServerByUserIdAndServerIdParams) (Server, error)
+	UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, arg UpdateServerLastSeenAtByUserIdAndServerIdParams) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)

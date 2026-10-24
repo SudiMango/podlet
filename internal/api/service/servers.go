@@ -117,6 +117,10 @@ func (s *ServerService) GetServerByUserIdAndServerId(ctx context.Context, userId
 	return s.serverRepository.GetServerByUserIdAndServerId(ctx, userId, serverId)
 }
 
+func (s *ServerService) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
+	return s.serverRepository.UpdateServerLastSeenAtByUserIdAndServerId(ctx, userId, serverId)
+}
+
 func (s *ServerService) UpdateServerByUserIdAndServerId(ctx context.Context, userId string, serverId string, request contract.UpdateServerRequest) (*contract.ServerResponse, error) {
 	if request.Name == nil {
 		return s.serverRepository.GetServerByUserIdAndServerId(ctx, userId, serverId)

@@ -31,12 +31,13 @@ type PendingServer struct {
 }
 
 type Server struct {
-	ID        string
-	Name      string
-	UserID    pgtype.UUID
-	TokenHash string
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	ID         string
+	Name       string
+	UserID     pgtype.UUID
+	TokenHash  string
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
+	LastSeenAt pgtype.Timestamptz
 }
 
 type Session struct {

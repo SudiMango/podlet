@@ -39,9 +39,10 @@ INSERT INTO servers (
     user_id,
     token_hash,
     created_at,
-    updated_at
+    updated_at,
+    last_seen_at
 )
-VALUES ($1, $2, $3, $4, $5, $6)
+VALUES ($1, $2, $3, $4, $5, $6, NULL)
 RETURNING *;
 
 -- name: GetServersByUserId :many
@@ -54,6 +55,10 @@ SELECT * FROM servers
 WHERE user_id = $1
     AND id = $2;
 
+-- name: GetServerByTokenHash :one
+SELECT * FROM servers
+WHERE token_hash = $1;
+
 -- name: UpdateServerByUserIdAndServerId :one
 UPDATE servers
 SET
@@ -62,6 +67,13 @@ SET
 WHERE user_id = $1
     AND id = $2
 RETURNING *;
+
+-- name: UpdateServerLastSeenAtByUserIdAndServerId :execrows
+UPDATE servers
+SET
+    last_seen_at = $3
+WHERE user_id = $1
+    AND id = $2;
 
 -- name: DeleteServerByUserIdAndServerId :execrows
 DELETE FROM servers
