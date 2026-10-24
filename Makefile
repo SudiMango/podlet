@@ -3,13 +3,18 @@ ifneq (,$(wildcard .env))
     export
 endif
 
-.PHONY: api podlet sqlc migration-up migration-down migration-new db db-down seed DB_CHECK
+.PHONY: api podlet sqlc migration-up migration-down migration-new db db-down seed DB_CHECK setup
 .DEFAULT_GOAL := api
 
 POSTGRES_HOST ?= localhost
 POSTGRES_PORT ?= 5433
 POSTGRES_ENV = PGHOST="$(POSTGRES_HOST)" PGPORT="$(POSTGRES_PORT)" PGUSER="$(POSTGRES_USER)" PGPASSWORD="$(POSTGRES_PASSWORD)" PGDATABASE="$(POSTGRES_DB)" PGSSLMODE=disable
 
+
+# setup stuff
+
+setup:
+	go mod download
 
 # run apps
 
@@ -44,22 +49,22 @@ db-down:
 
 
 sqlc:
-	sqlc generate
+	go tool sqlc generate
 
 
 migration-new:
 ifndef name
 	$(error Error: Please provide a migration name. Example: make migration-new name=add_billing_table)
 endif
-	goose -dir internal/sql/migrations -s create $(name) sql
+	go tool goose -dir internal/sql/migrations -s create $(name) sql
 
 
 migration-up: DB_CHECK
-	$(POSTGRES_ENV) goose -dir internal/sql/migrations postgres "" up
+	$(POSTGRES_ENV) go tool goose -dir internal/sql/migrations postgres "" up
 
 
 migration-down: DB_CHECK
-	$(POSTGRES_ENV) goose -dir internal/sql/migrations postgres "" down
+	$(POSTGRES_ENV) go tool goose -dir internal/sql/migrations postgres "" down
 
 
 seed: DB_CHECK

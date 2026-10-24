@@ -3,3 +3,42 @@
 //   sqlc v1.31.1
 
 package db
+
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type Account struct {
+	ID                   pgtype.UUID
+	UserID               pgtype.UUID
+	Provider             string
+	ProviderAccountID    pgtype.Text
+	AccessToken          string
+	RefreshToken         pgtype.Text
+	AccessTokenExpiresAt pgtype.Timestamptz
+	Scope                string
+	IDToken              pgtype.Text
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
+type Session struct {
+	ID         pgtype.UUID
+	Token      string
+	UserID     pgtype.UUID
+	CreatedAt  pgtype.Timestamptz
+	ExpiresAt  pgtype.Timestamptz
+	LastAccess pgtype.Timestamptz
+	Metadata   pgtype.Text
+}
+
+type User struct {
+	ID              pgtype.UUID
+	Email           string
+	Password        pgtype.Text
+	EmailVerifiedAt pgtype.Timestamptz
+	FirstName       string
+	LastName        pgtype.Text
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}

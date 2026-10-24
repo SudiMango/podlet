@@ -11,6 +11,7 @@ import (
 
 	"github.com/SudiMango/podlet/internal/api/handler"
 	"github.com/go-chi/chi/v5"
+	"github.com/thecodearcher/limen"
 	"go.uber.org/fx"
 )
 
@@ -23,12 +24,15 @@ type RouterParams struct {
 	fx.In
 
 	HealthHandler *handler.HealthHandler
+	Auth          *limen.Limen
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Get("/health", params.HealthHandler.IsDatabaseHealthy)
+	r.Handle("/auth", params.Auth.Handler())
+	r.Handle("/auth/*", params.Auth.Handler())
 
 	return r
 }
