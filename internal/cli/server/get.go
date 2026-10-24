@@ -83,12 +83,13 @@ func getRegisteredServers(cmd *cobra.Command) error {
 
 	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
 
-	fmt.Fprintln(w, "ID\tNAME\tLAST SEEN AT\tCREATED AT\tUPDATED AT")
+	fmt.Fprintln(w, "ID\tNAME\tLIFECYCLE STATE\tLAST SEEN AT\tCREATED AT\tUPDATED AT")
 
 	for _, server := range response {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 			server.Id,
 			server.Name,
+			server.LifecycleState,
 			formatLastSeenAt(server.LastSeenAt),
 			server.CreatedAt.Local().Format("2006-01-02 15:04"),
 			server.UpdatedAt.Local().Format("2006-01-02 15:04"),
@@ -129,6 +130,7 @@ func getRegisteredServer(cmd *cobra.Command, serverId string) error {
 
 	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
 	fmt.Fprintf(w, "Name:\t%s\n", response.Name)
+	fmt.Fprintf(w, "Lifecycle State:\t%s\n", response.LifecycleState)
 	fmt.Fprintf(w, "Last Seen At:\t%s\n", formatLastSeenAt(response.LastSeenAt))
 	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
 	fmt.Fprintf(w, "Updated At:\t%s\n", response.UpdatedAt.Local().Format("2006-01-02 15:04"))

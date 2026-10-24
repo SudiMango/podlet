@@ -65,6 +65,11 @@ func deleteServer(cmd *cobra.Command, serverId string, pending bool) error {
 		return fmt.Errorf("delete %s server: %w", serverType, err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "%s server %s deleted successfully.\n", serverType, serverId)
+	if pending {
+		fmt.Fprintf(cmd.OutOrStdout(), "pending server %s deleted successfully.\n", serverId)
+		return nil
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "registered server %s marked for deletion. It will be removed when its agent checks in.\n", serverId)
 	return nil
 }
