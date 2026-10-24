@@ -1,9 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"net/http"
-	"os"
 
+	"github.com/SudiMango/podlet/internal/cli/config"
 	"github.com/spf13/cobra"
 )
 
@@ -14,20 +15,24 @@ func (HealthCommand) Command() *cobra.Command {
 		Use:   "health",
 		Short: "Check the health of podlet",
 		Long:  "Check the health of podlet",
-		Run: func(cmd *cobra.Command, args []string) {
-			response, err := http.Get(os.Getenv("BASE_URL") + "/health")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			baseURL, err := config.LoadBaseURL()
 			if err != nil {
-				cmd.PrintErrln("Error checking health: ", err)
-				os.Exit(1)
+				return err
+			}
+
+			response, err := http.Get(baseURL + "/health")
+			if err != nil {
+				return fmt.Errorf("check health: %w", err)
 			}
 			defer response.Body.Close()
 
 			if response.StatusCode == http.StatusOK {
 				cmd.Println("Podlet is healthy")
-			} else {
-				cmd.Println("Podlet is not healthy. Status code: ", response.StatusCode)
-				os.Exit(1)
+				return nil
 			}
+
+			return fmt.Errorf("Podlet is not healthy: %s", response.Status)
 		},
 	}
 }

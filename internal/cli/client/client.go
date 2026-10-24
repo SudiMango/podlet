@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"strings"
+
+	"github.com/SudiMango/podlet/internal/cli/config"
 )
 
 type Client struct {
@@ -17,9 +16,9 @@ type Client struct {
 }
 
 func New() (*Client, error) {
-	baseURL := strings.TrimRight(os.Getenv("BASE_URL"), "/")
-	if baseURL == "" {
-		return nil, errors.New("BASE_URL is required")
+	baseURL, err := config.LoadBaseURL()
+	if err != nil {
+		return nil, err
 	}
 
 	return &Client{
@@ -74,7 +73,7 @@ func (c *Client) DoJSON(
 
 		if err := json.NewDecoder(response.Body).Decode(&apiError); err == nil &&
 			apiError.Message != "" {
-			return nil, errors.New(apiError.Message)
+			return nil, fmt.Errorf("%s", apiError.Message)
 		}
 
 		return nil, fmt.Errorf("API returned %s", response.Status)
