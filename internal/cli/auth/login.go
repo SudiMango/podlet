@@ -2,19 +2,15 @@ package auth
 
 import (
 	"bufio"
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"os/exec"
-	"runtime"
-	"strings"
 
-	"github.com/SudiMango/podlet/internal/api/auth"
+	"github.com/SudiMango/podlet/internal/cli/browser"
+	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/contract"
 	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
 )
@@ -31,9 +27,8 @@ func (LoginCommand) Command() *cobra.Command {
 				return err
 			}
 
-			if err = keyring.SaveToken(token); err != nil {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Failed to save token: %v\n", err)
-				return err
+			if err := keyring.SaveToken(token); err != nil {
+				return fmt.Errorf("save session token: %w", err)
 			}
 
 			fmt.Fprintln(cmd.OutOrStdout(), "Logged in successfully")
@@ -43,17 +38,19 @@ func (LoginCommand) Command() *cobra.Command {
 }
 
 func login(ctx context.Context, cmd *cobra.Command) (string, error) {
-	baseURL := strings.TrimRight(os.Getenv("BASE_URL"), "/")
-	if baseURL == "" {
-		return "", errors.New("BASE_URL is required")
+	api, err := client.New()
+	if err != nil {
+		return "", err
 	}
 
-	var authorization auth.GithubDeviceStartResponse
-	if _, err := postJSON(
+	var authorization contract.GithubDeviceStartResponse
+	if _, err := api.DoJSON(
 		ctx,
-		baseURL+"/auth/device/github/start",
+		http.MethodPost,
+		"/auth/device/github/start",
 		nil,
 		&authorization,
+		"",
 	); err != nil {
 		return "", fmt.Errorf("start login: %w", err)
 	}
@@ -66,20 +63,22 @@ func login(ctx context.Context, cmd *cobra.Command) (string, error) {
 		return "", fmt.Errorf("wait for confirmation: %w", err)
 	}
 
-	if err := openBrowser(authorization.VerificationURI); err != nil {
+	if err := browser.Open(authorization.VerificationURI); err != nil {
 		fmt.Fprintf(out, "Failed opening a web browser at %s\n", authorization.VerificationURI)
 		fmt.Fprintf(out, "Open %s in your browser and enter code %s\n", authorization.VerificationURI, authorization.UserCode)
 	}
 
-	headers, err := postJSON(
+	headers, err := api.DoJSON(
 		ctx,
-		baseURL+"/auth/device/github/complete",
-		auth.GithubDeviceCompleteRequest{
+		http.MethodPost,
+		"/auth/device/github/complete",
+		contract.GithubDeviceCompleteRequest{
 			DeviceCode: authorization.DeviceCode,
 			ExpiresAt:  authorization.ExpiresAt,
 			Interval:   authorization.Interval,
 		},
 		nil,
+		"",
 	)
 	if err != nil {
 		return "", fmt.Errorf("complete login: %w", err)
@@ -91,72 +90,4 @@ func login(ctx context.Context, cmd *cobra.Command) (string, error) {
 	}
 
 	return token, nil
-}
-
-func openBrowser(url string) error {
-	var command *exec.Cmd
-
-	switch runtime.GOOS {
-	case "darwin":
-		command = exec.Command("open", url)
-	case "windows":
-		command = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
-	default:
-		command = exec.Command("xdg-open", url)
-	}
-
-	return command.Run()
-}
-
-func postJSON(
-	ctx context.Context,
-	url string,
-	input any,
-	output any,
-) (http.Header, error) {
-	var body bytes.Buffer
-
-	if input != nil {
-		if err := json.NewEncoder(&body).Encode(input); err != nil {
-			return nil, err
-		}
-	}
-
-	request, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		url,
-		&body,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Content-Type", "application/json")
-
-	response, err := http.DefaultClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		var apiError struct {
-			Message string `json:"message"`
-		}
-		if err := json.NewDecoder(response.Body).Decode(&apiError); err == nil &&
-			apiError.Message != "" {
-			return nil, errors.New(apiError.Message)
-		}
-		return nil, fmt.Errorf("API returned %s", response.Status)
-	}
-
-	if output != nil {
-		if err := json.NewDecoder(response.Body).Decode(output); err != nil {
-			return nil, err
-		}
-	}
-
-	return response.Header, nil
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/SudiMango/podlet/internal/api/util"
+	"github.com/SudiMango/podlet/internal/contract"
 	limenoauth "github.com/thecodearcher/limen/plugins/oauth"
 	"golang.org/x/oauth2"
 )
@@ -23,7 +24,7 @@ func (p *githubDevicePlugin) start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	util.SendJSON(w, http.StatusOK, GithubDeviceStartResponse{
+	util.SendJSON(w, http.StatusOK, contract.GithubDeviceStartResponse{
 		DeviceCode:              device.DeviceCode,
 		UserCode:                device.UserCode,
 		VerificationURI:         device.VerificationURI,
@@ -34,7 +35,7 @@ func (p *githubDevicePlugin) start(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *githubDevicePlugin) complete(w http.ResponseWriter, r *http.Request) {
-	var request GithubDeviceCompleteRequest
+	var request contract.GithubDeviceCompleteRequest
 	if err := util.DecodeJSON(r, &request); err != nil {
 		util.SendError(w, http.StatusBadRequest, errors.New("invalid request body"))
 		return
@@ -83,7 +84,7 @@ func (p *githubDevicePlugin) complete(w http.ResponseWriter, r *http.Request) {
 	private helpers
 */
 
-func validateDeviceCompleteRequest(request GithubDeviceCompleteRequest) error {
+func validateDeviceCompleteRequest(request contract.GithubDeviceCompleteRequest) error {
 	now := time.Now()
 	if strings.TrimSpace(request.DeviceCode) == "" {
 		return errors.New("device_code is required")

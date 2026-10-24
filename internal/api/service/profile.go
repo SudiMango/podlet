@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/api/repository"
+	"github.com/SudiMango/podlet/internal/contract"
 )
 
 type ProfileService struct {
@@ -17,7 +17,7 @@ func NewProfileService(profileRepository *repository.ProfileRepository) *Profile
 	}
 }
 
-func (s *ProfileService) GetPodletProfileByUserId(ctx context.Context, userId string) (*dto.PodletProfileResponse, error) {
+func (s *ProfileService) GetPodletProfileByUserId(ctx context.Context, userId string) (*contract.PodletProfileResponse, error) {
 	user, err := s.profileRepository.GetPodletProfileByUserId(ctx, userId)
 	if err != nil || user == nil {
 		return nil, err

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/SudiMango/podlet/internal/api/dto"
+	"github.com/SudiMango/podlet/internal/contract"
 	db "github.com/SudiMango/podlet/internal/sql/database"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -18,7 +18,7 @@ func NewProfileRepository(store *db.Queries) *ProfileRepository {
 	}
 }
 
-func (r *ProfileRepository) GetPodletProfileByUserId(ctx context.Context, userId string) (*dto.PodletProfileResponse, error) {
+func (r *ProfileRepository) GetPodletProfileByUserId(ctx context.Context, userId string) (*contract.PodletProfileResponse, error) {
 	var pgUserId pgtype.UUID
 
 	if err := pgUserId.Scan(userId); err != nil {
@@ -30,7 +30,7 @@ func (r *ProfileRepository) GetPodletProfileByUserId(ctx context.Context, userId
 		return nil, err
 	}
 
-	return &dto.PodletProfileResponse{
+	return &contract.PodletProfileResponse{
 		UserId:    user.UserID.String(),
 		FirstName: user.FirstName,
 		LastName:  &user.LastName.String,
