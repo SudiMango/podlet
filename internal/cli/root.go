@@ -16,9 +16,11 @@ type RootCommand struct{}
 
 func (RootCommand) Command() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "podlet",
-		Short: "Podlet",
-		Long:  "Podlet",
+		Use:           "podlet",
+		Short:         "Podlet",
+		Long:          "Podlet",
+		SilenceErrors: true,
+		SilenceUsage:  true,
 		Run: func(cmd *cobra.Command, args []string) {
 
 		},
@@ -34,7 +36,7 @@ func (RootCommand) Command() *cobra.Command {
 
 func (r RootCommand) Execute() {
 	if err := r.Command().Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
