@@ -1,10 +1,14 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
 	"os"
+
+	db "github.com/SudiMango/podlet/internal/sql/database"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func connectionString() (string, error) {
@@ -37,4 +41,29 @@ func connectionString() (string, error) {
 	databaseURL.RawQuery = query.Encode()
 
 	return databaseURL.String(), nil
+}
+
+func WithTransaction[T any](
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	fn func(*db.Queries) (T, error),
+) (T, error) {
+	var zero T
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer tx.Rollback(ctx)
+
+	result, err := fn(db.New(tx))
+	if err != nil {
+		return zero, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return zero, err
+	}
+
+	return result, nil
 }

@@ -22,6 +22,23 @@ type Account struct {
 	UpdatedAt            pgtype.Timestamptz
 }
 
+type PendingServer struct {
+	ID                    string
+	UserID                pgtype.UUID
+	RegistrationTokenHash string
+	CreatedAt             pgtype.Timestamptz
+	ExpiresAt             pgtype.Timestamptz
+}
+
+type Server struct {
+	ID        string
+	Name      string
+	UserID    pgtype.UUID
+	TokenHash string
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
 type Session struct {
 	ID         pgtype.UUID
 	Token      string

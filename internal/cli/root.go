@@ -5,6 +5,7 @@ import (
 	"os"
 
 	authcmd "github.com/SudiMango/podlet/internal/cli/auth"
+	servercmd "github.com/SudiMango/podlet/internal/cli/server"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +30,7 @@ func (RootCommand) Command() *cobra.Command {
 	cmd.AddCommand(
 		HealthCommand{}.Command(),
 		authcmd.AuthCommand{}.Command(),
+		servercmd.ServerCommand{}.Command(),
 	)
 
 	return cmd

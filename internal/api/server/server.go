@@ -27,6 +27,7 @@ type RouterParams struct {
 	Auth           *limen.Limen
 	HealthHandler  *handler.HealthHandler
 	ProfileHandler *handler.ProfileHandler
+	ServerHandler  *handler.ServerHandler
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
@@ -37,11 +38,25 @@ func provideRouter(params RouterParams) *chi.Mux {
 	r.Handle("/auth", params.Auth.Handler())
 	r.Handle("/auth/*", params.Auth.Handler())
 
+	r.Post("/servers/register", params.ServerHandler.CreateServerByUserId)
+
 	// All protected routes
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth(params.Auth))
 
 		r.Get("/profile", params.ProfileHandler.GetPodletProfileByUserId)
+
+		r.Route("/servers", func(r chi.Router) {
+			r.Post("/add", params.ServerHandler.CreatePendingServerByUserId)
+			r.Get("/pending", params.ServerHandler.GetValidPendingServersByUserId)
+			r.Get("/pending/{pendingServerId}", params.ServerHandler.GetValidPendingServerByUserIdAndPendingServerId)
+			r.Delete("/pending/{pendingServerId}", params.ServerHandler.DeletePendingServerByUserIdAndPendingServerId)
+
+			r.Get("/", params.ServerHandler.GetServersByUserId)
+			r.Get("/{serverId}", params.ServerHandler.GetServerByUserIdAndServerId)
+			r.Patch("/{serverId}", params.ServerHandler.UpdateServerByUserIdAndServerId)
+			r.Delete("/{serverId}", params.ServerHandler.DeleteServerByUserIdAndServerId)
+		})
 	})
 
 	return r
