@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/SudiMango/podlet/internal/api/auth"
 	"github.com/SudiMango/podlet/internal/api/handler"
 	"github.com/go-chi/chi/v5"
 	"github.com/thecodearcher/limen"
@@ -23,16 +24,25 @@ var Module = fx.Module("server",
 type RouterParams struct {
 	fx.In
 
-	HealthHandler *handler.HealthHandler
-	Auth          *limen.Limen
+	Auth           *limen.Limen
+	HealthHandler  *handler.HealthHandler
+	ProfileHandler *handler.ProfileHandler
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
 	r := chi.NewRouter()
 
+	// All public routes
 	r.Get("/health", params.HealthHandler.IsDatabaseHealthy)
 	r.Handle("/auth", params.Auth.Handler())
 	r.Handle("/auth/*", params.Auth.Handler())
+
+	// All protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(auth.RequireAuth(params.Auth))
+
+		r.Get("/profile", params.ProfileHandler.GetPodletProfileByUserId)
+	})
 
 	return r
 }

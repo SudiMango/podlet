@@ -6,9 +6,12 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	GetPodletProfileByUserId(ctx context.Context, id pgtype.UUID) (GetPodletProfileByUserIdRow, error)
 	PingDatabase(ctx context.Context) (int32, error)
 }
 

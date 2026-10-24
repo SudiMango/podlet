@@ -12,5 +12,5 @@ func main() {
 		log.Println("No .env file found.")
 	}
 
-	cli.Execute()
+	cli.RootCommand{}.Execute()
 }
