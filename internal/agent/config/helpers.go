@@ -25,7 +25,7 @@ func LoadAgentConfig() (*Config, error) {
 		return nil, fmt.Errorf("decode agent configuration: %w", err)
 	}
 
-	if config.Token == "" || config.APIURL == "" {
+	if config.ID == "" || config.Token == "" || config.APIURL == "" {
 		return nil, fmt.Errorf("agent configuration is incomplete")
 	}
 
