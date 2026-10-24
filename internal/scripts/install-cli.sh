@@ -2,10 +2,13 @@
 set -euo pipefail
 
 readonly CLI_VERSION="v0.1.0"
-readonly DOWNLOAD_BASE_URL="https://downloads.podlet.dev/cli/${CLI_VERSION}"
+readonly DOWNLOAD_ROOT_URL="https://downloads.podlet.dev/cli"
+readonly DOWNLOAD_BASE_URL="${DOWNLOAD_ROOT_URL}/${CLI_VERSION}"
 readonly API_URL="https://api.podlet.dev"
 readonly BINARY_DIR="${HOME}/.local/bin"
 readonly BINARY_PATH="${BINARY_DIR}/podlet"
+readonly DATA_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/podlet"
+readonly UNINSTALLER_PATH="${DATA_DIR}/uninstall-cli.sh"
 readonly USER_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
 readonly CONFIG_DIR="${USER_CONFIG_DIR}/podlet"
 readonly CONFIG_FILE="${CONFIG_DIR}/config.json"
@@ -48,6 +51,7 @@ trap 'rm -rf "$TEMP_DIR"' EXIT
 echo "Downloading Podlet CLI ${CLI_VERSION}..."
 curl -fsSL "${DOWNLOAD_BASE_URL}/${BINARY_NAME}" -o "${TEMP_DIR}/${BINARY_NAME}"
 curl -fsSL "${DOWNLOAD_BASE_URL}/checksums.txt" -o "${TEMP_DIR}/checksums.txt"
+curl -fsSL "${DOWNLOAD_ROOT_URL}/uninstall-cli.sh" -o "${TEMP_DIR}/uninstall-cli.sh"
 
 EXPECTED_CHECKSUM="$(awk -v filename="$BINARY_NAME" '$2 == filename { print $1 }' "${TEMP_DIR}/checksums.txt")"
 if [[ -z "$EXPECTED_CHECKSUM" ]]; then
@@ -59,6 +63,8 @@ printf '%s  %s\n' "$EXPECTED_CHECKSUM" "${TEMP_DIR}/${BINARY_NAME}" | sha256sum 
 
 install -d -m 0755 "$BINARY_DIR"
 install -m 0755 "${TEMP_DIR}/${BINARY_NAME}" "$BINARY_PATH"
+install -d -m 0755 "$DATA_DIR"
+install -m 0755 "${TEMP_DIR}/uninstall-cli.sh" "$UNINSTALLER_PATH"
 install -d -m 0700 "$CONFIG_DIR"
 
 if [[ ! -e "$CONFIG_FILE" ]]; then
@@ -69,6 +75,7 @@ fi
 echo "Podlet CLI installed successfully."
 echo "Binary: ${BINARY_PATH}"
 echo "Config: ${CONFIG_FILE}"
+echo "Uninstaller: ${UNINSTALLER_PATH}"
 
 case ":${PATH}:" in
     *":${BINARY_DIR}:"*)
