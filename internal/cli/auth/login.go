@@ -1,4 +1,4 @@
-package cli
+package auth
 
 import (
 	"bufio"
@@ -19,28 +19,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var authCmd = &cobra.Command{
-	Use:   "auth",
-	Short: "Manage authentication",
-}
+type LoginCommand struct{}
 
-var loginCmd = &cobra.Command{
-	Use:   "login",
-	Short: "Login to Podlet",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		token, err := login(cmd.Context(), cmd)
-		if err != nil {
-			return err
-		}
+func (LoginCommand) Command() *cobra.Command {
+	return &cobra.Command{
+		Use:   "login",
+		Short: "Login to Podlet",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			token, err := login(cmd.Context(), cmd)
+			if err != nil {
+				return err
+			}
 
-		if err = keyring.SaveToken(token); err != nil {
-			fmt.Fprintf(cmd.ErrOrStderr(), "Failed to save token: %v\n", err)
-			return err
-		}
+			if err = keyring.SaveToken(token); err != nil {
+				fmt.Fprintf(cmd.ErrOrStderr(), "Failed to save token: %v\n", err)
+				return err
+			}
 
-		fmt.Fprintln(cmd.OutOrStdout(), "Logged in successfully")
-		return nil
-	},
+			fmt.Fprintln(cmd.OutOrStdout(), "Logged in successfully")
+			return nil
+		},
+	}
 }
 
 func login(ctx context.Context, cmd *cobra.Command) (string, error) {
@@ -160,9 +159,4 @@ func postJSON(
 	}
 
 	return response.Header, nil
-}
-
-func init() {
-	authCmd.AddCommand(loginCmd)
-	rootCmd.AddCommand(authCmd)
 }
