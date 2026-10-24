@@ -7,6 +7,7 @@ import (
 	"github.com/SudiMango/podlet/internal/api/auth"
 	"github.com/SudiMango/podlet/internal/api/service"
 	"github.com/SudiMango/podlet/internal/api/util"
+	"github.com/SudiMango/podlet/internal/contract"
 )
 
 type ServerHandler struct {
@@ -52,4 +53,20 @@ func (h *ServerHandler) CreatePendingServerByUserId(w http.ResponseWriter, r *ht
 	}
 
 	util.SendJSON(w, http.StatusOK, *pendingServer)
+}
+
+func (h *ServerHandler) CreateServerByUserId(w http.ResponseWriter, r *http.Request) {
+	var request contract.CreateServerRequest
+	if err := util.DecodeJSON(r, &request); err != nil {
+		util.SendError(w, http.StatusBadRequest, errors.New("Invalid request body"))
+		return
+	}
+
+	server, err := h.serverService.CreateServerByUserId(r.Context(), request)
+	if err != nil {
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	util.SendJSON(w, http.StatusOK, *server)
 }

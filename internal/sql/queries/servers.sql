@@ -9,20 +9,28 @@ INSERT INTO pending_servers (
 VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
--- name: GetPendingServersByUserId :many
+-- name: GetValidPendingServersByUserId :many
 SELECT * FROM pending_servers
 WHERE user_id = $1
+    AND expires_at > NOW()
 ORDER BY created_at DESC;
 
--- name: GetPendingServerByPendingServerId :one
+-- name: GetValidPendingServerByPendingServerId :one
 SELECT * FROM pending_servers
-WHERE id = $1;
+WHERE id = $1
+    AND expires_at > NOW();
+
+-- name: GetValidPendingServerRegistrationTokenHash :one
+SELECT * FROM pending_servers
+WHERE registration_token_hash = $1
+    AND expires_at > NOW()
+FOR UPDATE;
 
 -- name: DeletePendingServerByPendingServerId :exec
 DELETE FROM pending_servers
 WHERE id = $1;
 
--- name: CreateServerByUserId :exec
+-- name: CreateServerByUserId :one
 INSERT INTO servers (
     id,
     name,

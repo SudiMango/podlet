@@ -50,7 +50,7 @@ func (q *Queries) CreatePendingServerByUserId(ctx context.Context, arg CreatePen
 	return i, err
 }
 
-const createServerByUserId = `-- name: CreateServerByUserId :exec
+const createServerByUserId = `-- name: CreateServerByUserId :one
 INSERT INTO servers (
     id,
     name,
@@ -72,8 +72,8 @@ type CreateServerByUserIdParams struct {
 	UpdatedAt pgtype.Timestamptz
 }
 
-func (q *Queries) CreateServerByUserId(ctx context.Context, arg CreateServerByUserIdParams) error {
-	_, err := q.db.Exec(ctx, createServerByUserId,
+func (q *Queries) CreateServerByUserId(ctx context.Context, arg CreateServerByUserIdParams) (Server, error) {
+	row := q.db.QueryRow(ctx, createServerByUserId,
 		arg.ID,
 		arg.Name,
 		arg.UserID,
@@ -81,7 +81,16 @@ func (q *Queries) CreateServerByUserId(ctx context.Context, arg CreateServerByUs
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
-	return err
+	var i Server
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.UserID,
+		&i.TokenHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const deletePendingServerByPendingServerId = `-- name: DeletePendingServerByPendingServerId :exec
@@ -102,56 +111,6 @@ WHERE id = $1
 func (q *Queries) DeleteServerByServerId(ctx context.Context, id string) error {
 	_, err := q.db.Exec(ctx, deleteServerByServerId, id)
 	return err
-}
-
-const getPendingServerByPendingServerId = `-- name: GetPendingServerByPendingServerId :one
-SELECT id, user_id, registration_token_hash, created_at, expires_at FROM pending_servers
-WHERE id = $1
-`
-
-func (q *Queries) GetPendingServerByPendingServerId(ctx context.Context, id string) (PendingServer, error) {
-	row := q.db.QueryRow(ctx, getPendingServerByPendingServerId, id)
-	var i PendingServer
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.RegistrationTokenHash,
-		&i.CreatedAt,
-		&i.ExpiresAt,
-	)
-	return i, err
-}
-
-const getPendingServersByUserId = `-- name: GetPendingServersByUserId :many
-SELECT id, user_id, registration_token_hash, created_at, expires_at FROM pending_servers
-WHERE user_id = $1
-ORDER BY created_at DESC
-`
-
-func (q *Queries) GetPendingServersByUserId(ctx context.Context, userID pgtype.UUID) ([]PendingServer, error) {
-	rows, err := q.db.Query(ctx, getPendingServersByUserId, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []PendingServer{}
-	for rows.Next() {
-		var i PendingServer
-		if err := rows.Scan(
-			&i.ID,
-			&i.UserID,
-			&i.RegistrationTokenHash,
-			&i.CreatedAt,
-			&i.ExpiresAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getServerByServerId = `-- name: GetServerByServerId :one
@@ -195,6 +154,78 @@ func (q *Queries) GetServersByUserId(ctx context.Context, userID pgtype.UUID) ([
 			&i.TokenHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getValidPendingServerByPendingServerId = `-- name: GetValidPendingServerByPendingServerId :one
+SELECT id, user_id, registration_token_hash, created_at, expires_at FROM pending_servers
+WHERE id = $1
+    AND expires_at > NOW()
+`
+
+func (q *Queries) GetValidPendingServerByPendingServerId(ctx context.Context, id string) (PendingServer, error) {
+	row := q.db.QueryRow(ctx, getValidPendingServerByPendingServerId, id)
+	var i PendingServer
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RegistrationTokenHash,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getValidPendingServerRegistrationTokenHash = `-- name: GetValidPendingServerRegistrationTokenHash :one
+SELECT id, user_id, registration_token_hash, created_at, expires_at FROM pending_servers
+WHERE registration_token_hash = $1
+    AND expires_at > NOW()
+FOR UPDATE
+`
+
+func (q *Queries) GetValidPendingServerRegistrationTokenHash(ctx context.Context, registrationTokenHash string) (PendingServer, error) {
+	row := q.db.QueryRow(ctx, getValidPendingServerRegistrationTokenHash, registrationTokenHash)
+	var i PendingServer
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RegistrationTokenHash,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getValidPendingServersByUserId = `-- name: GetValidPendingServersByUserId :many
+SELECT id, user_id, registration_token_hash, created_at, expires_at FROM pending_servers
+WHERE user_id = $1
+    AND expires_at > NOW()
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetValidPendingServersByUserId(ctx context.Context, userID pgtype.UUID) ([]PendingServer, error) {
+	rows, err := q.db.Query(ctx, getValidPendingServersByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PendingServer{}
+	for rows.Next() {
+		var i PendingServer
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.RegistrationTokenHash,
+			&i.CreatedAt,
+			&i.ExpiresAt,
 		); err != nil {
 			return nil, err
 		}

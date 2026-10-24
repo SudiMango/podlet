@@ -4,19 +4,9 @@ import "time"
 
 // Request
 
-type CreatePendingServerRequest struct {
-	Id                    string    `json:"-"`
-	CreatedAt             time.Time `json:"-"`
-	ExpiresAt             time.Time `json:"-"`
-	RegistrationTokenHash string    `json:"-"`
-}
-
 type CreateServerRequest struct {
-	Id        string    `json:"-"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
-	TokenHash string    `json:"-"`
+	Name              string `json:"name"`
+	RegistrationToken string `json:"registration_token"`
 }
 
 type UpdateServerRequest struct {
@@ -41,7 +31,7 @@ type ServerResponse struct {
 	UserId    string    `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	TokenHash *string   `json:"-"`
+	Token     *string   `json:"token"`
 }
 
 type ServersResponse []ServerResponse

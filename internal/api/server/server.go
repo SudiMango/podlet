@@ -38,6 +38,8 @@ func provideRouter(params RouterParams) *chi.Mux {
 	r.Handle("/auth", params.Auth.Handler())
 	r.Handle("/auth/*", params.Auth.Handler())
 
+	r.Post("/servers/register", params.ServerHandler.CreateServerByUserId)
+
 	// All protected routes
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth(params.Auth))

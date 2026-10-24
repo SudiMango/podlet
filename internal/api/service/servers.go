@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/api/repository"
 	"github.com/SudiMango/podlet/internal/api/util"
 	"github.com/SudiMango/podlet/internal/contract"
@@ -34,7 +35,7 @@ func (s *ServerService) CreatePendingServerByUserId(ctx context.Context, userId 
 	tokenHash := util.HashToken(token)
 
 	createdAtTime := time.Now()
-	request := contract.CreatePendingServerRequest{
+	request := dto.CreatePendingServerRequest{
 		Id:                    util.GenerateID(pendingServerIdPrefix),
 		CreatedAt:             createdAtTime,
 		ExpiresAt:             createdAtTime.Add(10 * time.Minute),
@@ -47,5 +48,44 @@ func (s *ServerService) CreatePendingServerByUserId(ctx context.Context, userId 
 	}
 
 	done.RegistrationToken = &token
+	return done, nil
+}
+
+func (s *ServerService) CreateServerByUserId(ctx context.Context, request contract.CreateServerRequest) (*contract.ServerResponse, error) {
+
+	// Check if the user owns this pending server and if it is not expired
+	pendingServer, err := s.serverRepository.GetValidPendingServerRegistrationTokenHash(ctx, util.HashToken(request.RegistrationToken))
+	if err != nil {
+		return nil, err
+	}
+
+	// Register new server for user
+	token, err := util.GenerateToken()
+	if err != nil {
+		return nil, err
+	}
+
+	tokenHash := util.HashToken(token)
+
+	createdAtTime := time.Now()
+	requestDb := dto.CreateServerRequest{
+		Id:        util.GenerateID(serverIdPrefix),
+		Name:      request.Name,
+		CreatedAt: createdAtTime,
+		UpdatedAt: createdAtTime,
+		TokenHash: tokenHash,
+	}
+
+	done, err := s.serverRepository.CreateServerByUserId(ctx, pendingServer.UserId, requestDb)
+	if err != nil {
+		return nil, err
+	}
+	done.Token = &token
+
+	err = s.serverRepository.DeletePendingServerByPendingServerId(ctx, pendingServer.Id)
+	if err != nil {
+		return done, err
+	}
+
 	return done, nil
 }
