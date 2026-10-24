@@ -46,7 +46,11 @@ func provideRouter(params RouterParams) *chi.Mux {
 
 		r.Get("/profile", params.ProfileHandler.GetPodletProfileByUserId)
 
-		r.Post("/servers/add", params.ServerHandler.CreatePendingServerByUserId)
+		r.Route("/servers", func(r chi.Router) {
+			r.Post("/add", params.ServerHandler.CreatePendingServerByUserId)
+			r.Get("/", params.ServerHandler.GetServersByUserId)
+			r.Get("/{serverId}", params.ServerHandler.GetServerByUserIdAndServerId)
+		})
 	})
 
 	return r

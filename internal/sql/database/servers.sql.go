@@ -93,33 +93,51 @@ func (q *Queries) CreateServerByUserId(ctx context.Context, arg CreateServerByUs
 	return i, err
 }
 
-const deletePendingServerByPendingServerId = `-- name: DeletePendingServerByPendingServerId :exec
+const deletePendingServerByUserIdAndPendingServerId = `-- name: DeletePendingServerByUserIdAndPendingServerId :exec
 DELETE FROM pending_servers
-WHERE id = $1
+WHERE user_id = $1
+    AND id = $2
 `
 
-func (q *Queries) DeletePendingServerByPendingServerId(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, deletePendingServerByPendingServerId, id)
+type DeletePendingServerByUserIdAndPendingServerIdParams struct {
+	UserID pgtype.UUID
+	ID     string
+}
+
+func (q *Queries) DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) error {
+	_, err := q.db.Exec(ctx, deletePendingServerByUserIdAndPendingServerId, arg.UserID, arg.ID)
 	return err
 }
 
-const deleteServerByServerId = `-- name: DeleteServerByServerId :exec
+const deleteServerByUserIdAndServerId = `-- name: DeleteServerByUserIdAndServerId :exec
 DELETE FROM servers
-WHERE id = $1
+WHERE user_id = $1
+    AND id = $2
 `
 
-func (q *Queries) DeleteServerByServerId(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, deleteServerByServerId, id)
+type DeleteServerByUserIdAndServerIdParams struct {
+	UserID pgtype.UUID
+	ID     string
+}
+
+func (q *Queries) DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) error {
+	_, err := q.db.Exec(ctx, deleteServerByUserIdAndServerId, arg.UserID, arg.ID)
 	return err
 }
 
-const getServerByServerId = `-- name: GetServerByServerId :one
+const getServerByUserIdAndServerId = `-- name: GetServerByUserIdAndServerId :one
 SELECT id, name, user_id, token_hash, created_at, updated_at FROM servers
-WHERE id = $1
+WHERE user_id = $1
+    AND id = $2
 `
 
-func (q *Queries) GetServerByServerId(ctx context.Context, id string) (Server, error) {
-	row := q.db.QueryRow(ctx, getServerByServerId, id)
+type GetServerByUserIdAndServerIdParams struct {
+	UserID pgtype.UUID
+	ID     string
+}
+
+func (q *Queries) GetServerByUserIdAndServerId(ctx context.Context, arg GetServerByUserIdAndServerIdParams) (Server, error) {
+	row := q.db.QueryRow(ctx, getServerByUserIdAndServerId, arg.UserID, arg.ID)
 	var i Server
 	err := row.Scan(
 		&i.ID,
@@ -165,14 +183,20 @@ func (q *Queries) GetServersByUserId(ctx context.Context, userID pgtype.UUID) ([
 	return items, nil
 }
 
-const getValidPendingServerByPendingServerId = `-- name: GetValidPendingServerByPendingServerId :one
+const getValidPendingServerByUserIdAndPendingServerId = `-- name: GetValidPendingServerByUserIdAndPendingServerId :one
 SELECT id, user_id, registration_token_hash, created_at, expires_at FROM pending_servers
-WHERE id = $1
+WHERE user_id = $1
+    AND id = $2
     AND expires_at > NOW()
 `
 
-func (q *Queries) GetValidPendingServerByPendingServerId(ctx context.Context, id string) (PendingServer, error) {
-	row := q.db.QueryRow(ctx, getValidPendingServerByPendingServerId, id)
+type GetValidPendingServerByUserIdAndPendingServerIdParams struct {
+	UserID pgtype.UUID
+	ID     string
+}
+
+func (q *Queries) GetValidPendingServerByUserIdAndPendingServerId(ctx context.Context, arg GetValidPendingServerByUserIdAndPendingServerIdParams) (PendingServer, error) {
+	row := q.db.QueryRow(ctx, getValidPendingServerByUserIdAndPendingServerId, arg.UserID, arg.ID)
 	var i PendingServer
 	err := row.Scan(
 		&i.ID,
@@ -237,22 +261,24 @@ func (q *Queries) GetValidPendingServersByUserId(ctx context.Context, userID pgt
 	return items, nil
 }
 
-const updateServerByServerId = `-- name: UpdateServerByServerId :one
+const updateServerByUserIdAndServerId = `-- name: UpdateServerByUserIdAndServerId :one
 UPDATE servers
 SET
-    name = $2,
+    name = $3,
     updated_at = NOW()
-WHERE id = $1
+WHERE user_id = $1
+    AND id = $2
 RETURNING id, name, user_id, token_hash, created_at, updated_at
 `
 
-type UpdateServerByServerIdParams struct {
-	ID   string
-	Name string
+type UpdateServerByUserIdAndServerIdParams struct {
+	UserID pgtype.UUID
+	ID     string
+	Name   string
 }
 
-func (q *Queries) UpdateServerByServerId(ctx context.Context, arg UpdateServerByServerIdParams) (Server, error) {
-	row := q.db.QueryRow(ctx, updateServerByServerId, arg.ID, arg.Name)
+func (q *Queries) UpdateServerByUserIdAndServerId(ctx context.Context, arg UpdateServerByUserIdAndServerIdParams) (Server, error) {
+	row := q.db.QueryRow(ctx, updateServerByUserIdAndServerId, arg.UserID, arg.ID, arg.Name)
 	var i Server
 	err := row.Scan(
 		&i.ID,

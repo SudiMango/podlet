@@ -12,6 +12,7 @@ func (ServerCommand) Command() *cobra.Command {
 
 	cmd.AddCommand(
 		AddServerCommand{}.Command(),
+		GetServerCommand{}.Command(),
 	)
 
 	return cmd

@@ -26,7 +26,6 @@ func NewServerService(serverRepository *repository.ServerRepository) *ServerServ
 }
 
 func (s *ServerService) CreatePendingServerByUserId(ctx context.Context, userId string) (*contract.PendingServerResponse, error) {
-
 	token, err := util.GenerateToken()
 	if err != nil {
 		return nil, err
@@ -82,10 +81,18 @@ func (s *ServerService) CreateServerByUserId(ctx context.Context, request contra
 	}
 	done.Token = &token
 
-	err = s.serverRepository.DeletePendingServerByPendingServerId(ctx, pendingServer.Id)
+	err = s.serverRepository.DeletePendingServerByUserIdAndPendingServerId(ctx, pendingServer.UserId, pendingServer.Id)
 	if err != nil {
 		return done, err
 	}
 
 	return done, nil
+}
+
+func (s *ServerService) GetServersByUserId(ctx context.Context, userId string) (*contract.ServersResponse, error) {
+	return s.serverRepository.GetServersByUserId(ctx, userId)
+}
+
+func (s *ServerService) GetServerByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*contract.ServerResponse, error) {
+	return s.serverRepository.GetServerByUserIdAndServerId(ctx, userId, serverId)
 }

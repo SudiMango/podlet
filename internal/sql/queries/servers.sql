@@ -15,9 +15,10 @@ WHERE user_id = $1
     AND expires_at > NOW()
 ORDER BY created_at DESC;
 
--- name: GetValidPendingServerByPendingServerId :one
+-- name: GetValidPendingServerByUserIdAndPendingServerId :one
 SELECT * FROM pending_servers
-WHERE id = $1
+WHERE user_id = $1
+    AND id = $2
     AND expires_at > NOW();
 
 -- name: GetValidPendingServerRegistrationTokenHash :one
@@ -26,9 +27,10 @@ WHERE registration_token_hash = $1
     AND expires_at > NOW()
 FOR UPDATE;
 
--- name: DeletePendingServerByPendingServerId :exec
+-- name: DeletePendingServerByUserIdAndPendingServerId :exec
 DELETE FROM pending_servers
-WHERE id = $1;
+WHERE user_id = $1
+    AND id = $2;
 
 -- name: CreateServerByUserId :one
 INSERT INTO servers (
@@ -47,18 +49,21 @@ SELECT * FROM servers
 WHERE user_id = $1
 ORDER BY created_at DESC;
 
--- name: GetServerByServerId :one
+-- name: GetServerByUserIdAndServerId :one
 SELECT * FROM servers
-WHERE id = $1;
+WHERE user_id = $1
+    AND id = $2;
 
--- name: UpdateServerByServerId :one
+-- name: UpdateServerByUserIdAndServerId :one
 UPDATE servers
 SET
-    name = $2,
+    name = $3,
     updated_at = NOW()
-WHERE id = $1
+WHERE user_id = $1
+    AND id = $2
 RETURNING *;
 
--- name: DeleteServerByServerId :exec
+-- name: DeleteServerByUserIdAndServerId :exec
 DELETE FROM servers
-WHERE id = $1;
+WHERE user_id = $1
+    AND id = $2;

@@ -13,16 +13,16 @@ import (
 type Querier interface {
 	CreatePendingServerByUserId(ctx context.Context, arg CreatePendingServerByUserIdParams) (PendingServer, error)
 	CreateServerByUserId(ctx context.Context, arg CreateServerByUserIdParams) (Server, error)
-	DeletePendingServerByPendingServerId(ctx context.Context, id string) error
-	DeleteServerByServerId(ctx context.Context, id string) error
+	DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) error
+	DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) error
 	GetPodletProfileByUserId(ctx context.Context, id pgtype.UUID) (GetPodletProfileByUserIdRow, error)
-	GetServerByServerId(ctx context.Context, id string) (Server, error)
+	GetServerByUserIdAndServerId(ctx context.Context, arg GetServerByUserIdAndServerIdParams) (Server, error)
 	GetServersByUserId(ctx context.Context, userID pgtype.UUID) ([]Server, error)
-	GetValidPendingServerByPendingServerId(ctx context.Context, id string) (PendingServer, error)
+	GetValidPendingServerByUserIdAndPendingServerId(ctx context.Context, arg GetValidPendingServerByUserIdAndPendingServerIdParams) (PendingServer, error)
 	GetValidPendingServerRegistrationTokenHash(ctx context.Context, registrationTokenHash string) (PendingServer, error)
 	GetValidPendingServersByUserId(ctx context.Context, userID pgtype.UUID) ([]PendingServer, error)
 	PingDatabase(ctx context.Context) (int32, error)
-	UpdateServerByServerId(ctx context.Context, arg UpdateServerByServerIdParams) (Server, error)
+	UpdateServerByUserIdAndServerId(ctx context.Context, arg UpdateServerByUserIdAndServerIdParams) (Server, error)
 }
 
 var _ Querier = (*Queries)(nil)
