@@ -61,7 +61,7 @@ INSERT INTO servers (
     last_seen_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, NULL)
-RETURNING id, name, user_id, token_hash, created_at, updated_at, last_seen_at
+RETURNING id, name, user_id, token_hash, created_at, updated_at, last_seen_at, lifecycle_state
 `
 
 type CreateServerByUserIdParams struct {
@@ -91,6 +91,7 @@ func (q *Queries) CreateServerByUserId(ctx context.Context, arg CreateServerByUs
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastSeenAt,
+		&i.LifecycleState,
 	)
 	return i, err
 }
@@ -134,7 +135,7 @@ func (q *Queries) DeleteServerByUserIdAndServerId(ctx context.Context, arg Delet
 }
 
 const getServerByTokenHash = `-- name: GetServerByTokenHash :one
-SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at FROM servers
+SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at, lifecycle_state FROM servers
 WHERE token_hash = $1
 `
 
@@ -149,12 +150,13 @@ func (q *Queries) GetServerByTokenHash(ctx context.Context, tokenHash string) (S
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastSeenAt,
+		&i.LifecycleState,
 	)
 	return i, err
 }
 
 const getServerByUserIdAndServerId = `-- name: GetServerByUserIdAndServerId :one
-SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at FROM servers
+SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at, lifecycle_state FROM servers
 WHERE user_id = $1
     AND id = $2
 `
@@ -175,12 +177,13 @@ func (q *Queries) GetServerByUserIdAndServerId(ctx context.Context, arg GetServe
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastSeenAt,
+		&i.LifecycleState,
 	)
 	return i, err
 }
 
 const getServersByUserId = `-- name: GetServersByUserId :many
-SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at FROM servers
+SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at, lifecycle_state FROM servers
 WHERE user_id = $1
 ORDER BY created_at DESC
 `
@@ -202,6 +205,7 @@ func (q *Queries) GetServersByUserId(ctx context.Context, userID pgtype.UUID) ([
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenAt,
+			&i.LifecycleState,
 		); err != nil {
 			return nil, err
 		}
@@ -291,6 +295,28 @@ func (q *Queries) GetValidPendingServersByUserId(ctx context.Context, userID pgt
 	return items, nil
 }
 
+const markServerForDeletionByUserIdAndServerId = `-- name: MarkServerForDeletionByUserIdAndServerId :execrows
+UPDATE servers
+SET
+    lifecycle_state = $3
+WHERE user_id = $1
+    AND id = $2
+`
+
+type MarkServerForDeletionByUserIdAndServerIdParams struct {
+	UserID         pgtype.UUID
+	ID             string
+	LifecycleState ServerLifecycleState
+}
+
+func (q *Queries) MarkServerForDeletionByUserIdAndServerId(ctx context.Context, arg MarkServerForDeletionByUserIdAndServerIdParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markServerForDeletionByUserIdAndServerId, arg.UserID, arg.ID, arg.LifecycleState)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const updateServerByUserIdAndServerId = `-- name: UpdateServerByUserIdAndServerId :one
 UPDATE servers
 SET
@@ -298,7 +324,7 @@ SET
     updated_at = NOW()
 WHERE user_id = $1
     AND id = $2
-RETURNING id, name, user_id, token_hash, created_at, updated_at, last_seen_at
+RETURNING id, name, user_id, token_hash, created_at, updated_at, last_seen_at, lifecycle_state
 `
 
 type UpdateServerByUserIdAndServerIdParams struct {
@@ -318,16 +344,17 @@ func (q *Queries) UpdateServerByUserIdAndServerId(ctx context.Context, arg Updat
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastSeenAt,
+		&i.LifecycleState,
 	)
 	return i, err
 }
 
-const updateServerLastSeenAtByUserIdAndServerId = `-- name: UpdateServerLastSeenAtByUserIdAndServerId :execrows
+const updateServerLastSeenAtByUserIdAndServerId = `-- name: UpdateServerLastSeenAtByUserIdAndServerId :one
 UPDATE servers
-SET
-    last_seen_at = $3
+    SET last_seen_at = $3
 WHERE user_id = $1
     AND id = $2
+RETURNING lifecycle_state
 `
 
 type UpdateServerLastSeenAtByUserIdAndServerIdParams struct {
@@ -336,10 +363,9 @@ type UpdateServerLastSeenAtByUserIdAndServerIdParams struct {
 	LastSeenAt pgtype.Timestamptz
 }
 
-func (q *Queries) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, arg UpdateServerLastSeenAtByUserIdAndServerIdParams) (int64, error) {
-	result, err := q.db.Exec(ctx, updateServerLastSeenAtByUserIdAndServerId, arg.UserID, arg.ID, arg.LastSeenAt)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+func (q *Queries) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, arg UpdateServerLastSeenAtByUserIdAndServerIdParams) (ServerLifecycleState, error) {
+	row := q.db.QueryRow(ctx, updateServerLastSeenAtByUserIdAndServerId, arg.UserID, arg.ID, arg.LastSeenAt)
+	var lifecycle_state ServerLifecycleState
+	err := row.Scan(&lifecycle_state)
+	return lifecycle_state, err
 }

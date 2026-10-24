@@ -1,6 +1,10 @@
 package contract
 
-import "time"
+import (
+	"time"
+
+	"github.com/SudiMango/podlet/internal/api/dto"
+)
 
 // Request
 
@@ -26,13 +30,18 @@ type PendingServerResponse struct {
 type PendingServersResponse []PendingServerResponse
 
 type ServerResponse struct {
-	Id         string     `json:"id"`
-	Name       string     `json:"name"`
-	UserId     string     `json:"user_id"`
-	CreatedAt  time.Time  `json:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at"`
-	Token      *string    `json:"token"`
-	LastSeenAt *time.Time `json:"last_seen_at"`
+	Id             string                   `json:"id"`
+	Name           string                   `json:"name"`
+	UserId         string                   `json:"user_id"`
+	CreatedAt      time.Time                `json:"created_at"`
+	UpdatedAt      time.Time                `json:"updated_at"`
+	Token          *string                  `json:"token"`
+	LastSeenAt     *time.Time               `json:"last_seen_at"`
+	LifecycleState dto.ServerLifecycleState `json:"lifecycle_state"`
 }
 
 type ServersResponse []ServerResponse
+
+type HeartbeatResponse struct {
+	Action *HeartbeatAction `json:"action"`
+}

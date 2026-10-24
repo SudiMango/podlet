@@ -117,8 +117,13 @@ func (s *ServerService) GetServerByUserIdAndServerId(ctx context.Context, userId
 	return s.serverRepository.GetServerByUserIdAndServerId(ctx, userId, serverId)
 }
 
-func (s *ServerService) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
-	return s.serverRepository.UpdateServerLastSeenAtByUserIdAndServerId(ctx, userId, serverId)
+func (s *ServerService) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*dto.ServerLifecycleState, error) {
+	lifecycleState, err := s.serverRepository.UpdateServerLastSeenAtByUserIdAndServerId(ctx, userId, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	return lifecycleState, nil
 }
 
 func (s *ServerService) UpdateServerByUserIdAndServerId(ctx context.Context, userId string, serverId string, request contract.UpdateServerRequest) (*contract.ServerResponse, error) {
@@ -131,4 +136,8 @@ func (s *ServerService) UpdateServerByUserIdAndServerId(ctx context.Context, use
 
 func (s *ServerService) DeleteServerByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
 	return s.serverRepository.DeleteServerByUserIdAndServerId(ctx, userId, serverId)
+}
+
+func (s *ServerService) MarkServerForDeletionByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
+	return s.serverRepository.MarkServerForDeletionByUserIdAndServerId(ctx, userId, serverId)
 }

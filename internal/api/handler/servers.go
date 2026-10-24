@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/SudiMango/podlet/internal/api/auth"
+	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/api/service"
 	"github.com/SudiMango/podlet/internal/api/util"
 	"github.com/SudiMango/podlet/internal/contract"
@@ -223,7 +224,7 @@ func (h *ServerHandler) CreateServerByUserId(w http.ResponseWriter, r *http.Requ
 /*
 Get all registered servers owned by a user
 
-API URL: GET /servers/get
+API URL: GET /servers
 
 Args:
 
@@ -257,7 +258,7 @@ func (h *ServerHandler) GetServersByUserId(w http.ResponseWriter, r *http.Reques
 /*
 Get a registered server owned by a user
 
-API URL: GET /servers/get/{serverId}
+API URL: GET /servers/{serverId}
 
 Args:
 
@@ -295,6 +296,25 @@ func (h *ServerHandler) GetServerByUserIdAndServerId(w http.ResponseWriter, r *h
 	util.SendJSON(w, http.StatusOK, server)
 }
 
+/*
+Update the authenticated server agent's last-seen timestamp
+
+API URL: POST /agent/heartbeat
+
+Args:
+
+	none
+
+Returns:
+
+	a heartbeat action (HTTP 200) when the agent must perform an operation, or
+	an empty response (HTTP 204) when no action is required.
+
+Raises:
+
+	401: invalid agent identity or authentication token
+	500: unable to update the server's last-seen timestamp
+*/
 func (h *ServerHandler) UpdateServerLastSeenAtByUserIdAndServerId(w http.ResponseWriter, r *http.Request) {
 	identity, ok := auth.AgentIdentityFromContext(r.Context())
 	if !ok {
@@ -302,8 +322,15 @@ func (h *ServerHandler) UpdateServerLastSeenAtByUserIdAndServerId(w http.Respons
 		return
 	}
 
-	if err := h.serverService.UpdateServerLastSeenAtByUserIdAndServerId(r.Context(), identity.UserID, identity.ServerID); err != nil {
+	lifecycleState, err := h.serverService.UpdateServerLastSeenAtByUserIdAndServerId(r.Context(), identity.UserID, identity.ServerID)
+	if err != nil {
 		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if lifecycleState != nil && *lifecycleState == dto.ServerLifecyclePendingDeletion {
+		util.SendJSON(w, http.StatusOK, contract.HeartbeatResponse{
+			Action: new(contract.ActionUninstall),
+		})
 		return
 	}
 
@@ -359,7 +386,46 @@ func (h *ServerHandler) UpdateServerByUserIdAndServerId(w http.ResponseWriter, r
 }
 
 /*
-Delete a registered server owned by a user
+Delete the server represented by the authenticated server agent
+
+API URL: DELETE /agent
+
+Args:
+
+	none
+
+Returns:
+
+	an empty response (HTTP 204).
+
+Raises:
+
+	401: invalid agent identity or authentication token
+	404: registered server not found
+	500: unable to delete the registered server
+*/
+func (h *ServerHandler) DeleteServerByUserIdAndServerId(w http.ResponseWriter, r *http.Request) {
+	agentIdentity, ok := auth.AgentIdentityFromContext(r.Context())
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Invalid agent identity"))
+		return
+	}
+
+	if err := h.serverService.DeleteServerByUserIdAndServerId(r.Context(), agentIdentity.UserID, agentIdentity.ServerID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			util.SendError(w, http.StatusNotFound, errors.New("registered server not found"))
+			return
+		}
+
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+/*
+Mark a registered server for deletion by its agent
 
 API URL: DELETE /servers/{serverId}
 
@@ -369,16 +435,17 @@ Args:
 
 Returns:
 
-	an empty response (HTTP 204).
+	an empty response (HTTP 204). The server remains stored until its agent
+	receives the uninstall action and deletes the registration.
 
 Raises:
 
 	400: serverId is missing
 	401: unauthorized user
 	404: registered server not found
-	500: unable to delete the registered server
+	500: unable to mark the registered server for deletion
 */
-func (h *ServerHandler) DeleteServerByUserIdAndServerId(w http.ResponseWriter, r *http.Request) {
+func (h *ServerHandler) MarkServerForDeletionByUserIdAndServerId(w http.ResponseWriter, r *http.Request) {
 	userId, ok := auth.CurrentUserID(r)
 	if !ok {
 		util.SendError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
@@ -391,7 +458,7 @@ func (h *ServerHandler) DeleteServerByUserIdAndServerId(w http.ResponseWriter, r
 		return
 	}
 
-	if err := h.serverService.DeleteServerByUserIdAndServerId(r.Context(), userId, serverId); err != nil {
+	if err := h.serverService.MarkServerForDeletionByUserIdAndServerId(r.Context(), userId, serverId); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			util.SendError(w, http.StatusNotFound, errors.New("registered server not found"))
 			return

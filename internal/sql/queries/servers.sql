@@ -68,14 +68,21 @@ WHERE user_id = $1
     AND id = $2
 RETURNING *;
 
--- name: UpdateServerLastSeenAtByUserIdAndServerId :execrows
+-- name: UpdateServerLastSeenAtByUserIdAndServerId :one
 UPDATE servers
-SET
-    last_seen_at = $3
+    SET last_seen_at = $3
 WHERE user_id = $1
-    AND id = $2;
+    AND id = $2
+RETURNING lifecycle_state;
 
 -- name: DeleteServerByUserIdAndServerId :execrows
 DELETE FROM servers
+WHERE user_id = $1
+    AND id = $2;
+
+-- name: MarkServerForDeletionByUserIdAndServerId :execrows
+UPDATE servers
+SET
+    lifecycle_state = $3
 WHERE user_id = $1
     AND id = $2;

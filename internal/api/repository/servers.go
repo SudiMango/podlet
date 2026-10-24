@@ -257,14 +257,14 @@ func (r *ServerRepository) GetServerByTokenHash(ctx context.Context, tokenHash s
 	}, nil
 }
 
-func (r *ServerRepository) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
+func (r *ServerRepository) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*dto.ServerLifecycleState, error) {
 	var pgUserId pgtype.UUID
 
 	if err := pgUserId.Scan(userId); err != nil {
-		return err
+		return nil, err
 	}
 
-	rowsUpdated, err := r.store.UpdateServerLastSeenAtByUserIdAndServerId(ctx, db.UpdateServerLastSeenAtByUserIdAndServerIdParams{
+	lifecycleState, err := r.store.UpdateServerLastSeenAtByUserIdAndServerId(ctx, db.UpdateServerLastSeenAtByUserIdAndServerIdParams{
 		UserID: pgUserId,
 		ID:     serverId,
 		LastSeenAt: pgtype.Timestamptz{
@@ -273,13 +273,15 @@ func (r *ServerRepository) UpdateServerLastSeenAtByUserIdAndServerId(ctx context
 		},
 	})
 	if err != nil {
-		return err
-	}
-	if rowsUpdated == 0 {
-		return pgx.ErrNoRows
+		return nil, err
 	}
 
-	return nil
+	if lifecycleState != "active" {
+		state := dto.ServerLifecycleState(lifecycleState)
+		return &state, nil
+	}
+
+	return nil, nil
 }
 
 func (r *ServerRepository) UpdateServerByUserIdAndServerId(ctx context.Context, userId string, serverId string, name string) (*contract.ServerResponse, error) {
@@ -327,7 +329,27 @@ func (r *ServerRepository) DeleteServerByUserIdAndServerId(ctx context.Context, 
 		return pgx.ErrNoRows
 	}
 
-	// TODO: ensure server agent deletes with this
+	return nil
+}
+
+func (r *ServerRepository) MarkServerForDeletionByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return err
+	}
+
+	rowsDeleted, err := r.store.MarkServerForDeletionByUserIdAndServerId(ctx, db.MarkServerForDeletionByUserIdAndServerIdParams{
+		UserID:         pgUserId,
+		ID:             serverId,
+		LifecycleState: db.ServerLifecycleState(dto.ServerLifecyclePendingDeletion),
+	})
+	if err != nil {
+		return err
+	}
+	if rowsDeleted == 0 {
+		return pgx.ErrNoRows
+	}
 
 	return nil
 }

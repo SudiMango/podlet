@@ -22,9 +22,10 @@ type Querier interface {
 	GetValidPendingServerByUserIdAndPendingServerId(ctx context.Context, arg GetValidPendingServerByUserIdAndPendingServerIdParams) (PendingServer, error)
 	GetValidPendingServerRegistrationTokenHash(ctx context.Context, registrationTokenHash string) (PendingServer, error)
 	GetValidPendingServersByUserId(ctx context.Context, userID pgtype.UUID) ([]PendingServer, error)
+	MarkServerForDeletionByUserIdAndServerId(ctx context.Context, arg MarkServerForDeletionByUserIdAndServerIdParams) (int64, error)
 	PingDatabase(ctx context.Context) (int32, error)
 	UpdateServerByUserIdAndServerId(ctx context.Context, arg UpdateServerByUserIdAndServerIdParams) (Server, error)
-	UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, arg UpdateServerLastSeenAtByUserIdAndServerIdParams) (int64, error)
+	UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, arg UpdateServerLastSeenAtByUserIdAndServerIdParams) (ServerLifecycleState, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -5,8 +5,53 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type ServerLifecycleState string
+
+const (
+	ServerLifecycleStateActive          ServerLifecycleState = "active"
+	ServerLifecycleStatePendingDeletion ServerLifecycleState = "pending_deletion"
+)
+
+func (e *ServerLifecycleState) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ServerLifecycleState(s)
+	case string:
+		*e = ServerLifecycleState(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ServerLifecycleState: %T", src)
+	}
+	return nil
+}
+
+type NullServerLifecycleState struct {
+	ServerLifecycleState ServerLifecycleState
+	Valid                bool // Valid is true if ServerLifecycleState is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullServerLifecycleState) Scan(value interface{}) error {
+	if value == nil {
+		ns.ServerLifecycleState, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ServerLifecycleState.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullServerLifecycleState) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ServerLifecycleState), nil
+}
 
 type Account struct {
 	ID                   pgtype.UUID
@@ -31,13 +76,14 @@ type PendingServer struct {
 }
 
 type Server struct {
-	ID         string
-	Name       string
-	UserID     pgtype.UUID
-	TokenHash  string
-	CreatedAt  pgtype.Timestamptz
-	UpdatedAt  pgtype.Timestamptz
-	LastSeenAt pgtype.Timestamptz
+	ID             string
+	Name           string
+	UserID         pgtype.UUID
+	TokenHash      string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	LastSeenAt     pgtype.Timestamptz
+	LifecycleState ServerLifecycleState
 }
 
 type Session struct {

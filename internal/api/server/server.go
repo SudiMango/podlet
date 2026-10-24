@@ -57,7 +57,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 			r.Get("/", params.ServerHandler.GetServersByUserId)
 			r.Get("/{serverId}", params.ServerHandler.GetServerByUserIdAndServerId)
 			r.Patch("/{serverId}", params.ServerHandler.UpdateServerByUserIdAndServerId)
-			r.Delete("/{serverId}", params.ServerHandler.DeleteServerByUserIdAndServerId)
+			r.Delete("/{serverId}", params.ServerHandler.MarkServerForDeletionByUserIdAndServerId)
 		})
 	})
 
@@ -65,7 +65,10 @@ func provideRouter(params RouterParams) *chi.Mux {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequireAgentAuth(params.ServerRepository))
 
-		r.Post("/agent/heartbeat", params.ServerHandler.UpdateServerLastSeenAtByUserIdAndServerId)
+		r.Route("/agent", func(r chi.Router) {
+			r.Post("/heartbeat", params.ServerHandler.UpdateServerLastSeenAtByUserIdAndServerId)
+			r.Delete("/", params.ServerHandler.DeleteServerByUserIdAndServerId)
+		})
 	})
 
 	return r
