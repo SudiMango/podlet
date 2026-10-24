@@ -14,27 +14,38 @@ import (
 type GetServerCommand struct{}
 
 func (GetServerCommand) Command() *cobra.Command {
-	return &cobra.Command{
+	var pending bool
+
+	cmd := &cobra.Command{
 		Use:   "get [server-id]",
 		Short: "Check your registed servers",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				err := getRegisteredServers(cmd)
-				if err != nil {
-					return err
+			if pending {
+				if len(args) == 0 {
+					return getPendingServers(cmd)
 				}
-			} else {
-				serverId := args[0]
-				err := getRegisteredServer(cmd, serverId)
-				if err != nil {
-					return err
-				}
+
+				return getPendingServer(cmd, args[0])
 			}
 
-			return nil
+			if len(args) == 0 {
+				return getRegisteredServers(cmd)
+			}
+
+			return getRegisteredServer(cmd, args[0])
 		},
 	}
+
+	cmd.Flags().BoolVarP(
+		&pending,
+		"pending",
+		"p",
+		false,
+		"Get pending servers instead of registered servers",
+	)
+
+	return cmd
 }
 
 func getRegisteredServers(cmd *cobra.Command) error {
@@ -44,13 +55,13 @@ func getRegisteredServers(cmd *cobra.Command) error {
 		return fmt.Errorf("load session token: %w", err)
 	}
 
-	// Get registered servers
+	// Get servers
 	api, err := client.New()
 	if err != nil {
 		return err
 	}
 
-	var response []contract.ServerResponse
+	var response contract.ServersResponse
 	if _, err := api.DoJSON(
 		cmd.Context(),
 		http.MethodGet,
@@ -116,9 +127,91 @@ func getRegisteredServer(cmd *cobra.Command, serverId string) error {
 
 	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
 	fmt.Fprintf(w, "Name:\t%s\n", response.Name)
-	fmt.Fprintf(w, "User ID:\t%s\n", response.UserId)
 	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
 	fmt.Fprintf(w, "Updated At:\t%s\n", response.UpdatedAt.Local().Format("2006-01-02 15:04"))
+
+	return w.Flush()
+}
+
+func getPendingServers(cmd *cobra.Command) error {
+	// Load existing token
+	token, err := keyring.LoadToken()
+	if err != nil {
+		return fmt.Errorf("load session token: %w", err)
+	}
+
+	// Get servers
+	api, err := client.New()
+	if err != nil {
+		return err
+	}
+
+	var response contract.PendingServersResponse
+	if _, err := api.DoJSON(
+		cmd.Context(),
+		http.MethodGet,
+		"/servers/pending",
+		nil,
+		&response,
+		token,
+	); err != nil {
+		return fmt.Errorf("get pending servers: %w", err)
+	}
+
+	// Print servers to console
+	out := cmd.OutOrStdout()
+	if len(response) == 0 {
+		fmt.Fprintln(out, "No pending servers found.")
+		return nil
+	}
+
+	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
+
+	fmt.Fprintln(w, "ID\tNAME\tCREATED AT\tEXPIRES AT")
+
+	for _, server := range response {
+		fmt.Fprintf(w, "%s\t%s\t%s\n",
+			server.Id,
+			server.CreatedAt.Local().Format("2006-01-02 15:04"),
+			server.ExpiresAt.Local().Format("2006-01-02 15:04"),
+		)
+	}
+
+	return w.Flush()
+}
+
+func getPendingServer(cmd *cobra.Command, serverId string) error {
+	// Load existing token
+	token, err := keyring.LoadToken()
+	if err != nil {
+		return fmt.Errorf("load session token: %w", err)
+	}
+
+	// Get server
+	api, err := client.New()
+	if err != nil {
+		return err
+	}
+
+	var response contract.PendingServerResponse
+	if _, err := api.DoJSON(
+		cmd.Context(),
+		http.MethodGet,
+		"/servers/pending/"+serverId,
+		nil,
+		&response,
+		token,
+	); err != nil {
+		return fmt.Errorf("get pending server: %w", err)
+	}
+
+	// Print server to console
+	out := cmd.OutOrStdout()
+	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
+
+	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
+	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
+	fmt.Fprintf(w, "Expires At:\t%s\n", response.ExpiresAt.Local().Format("2006-01-02 15:04"))
 
 	return w.Flush()
 }
