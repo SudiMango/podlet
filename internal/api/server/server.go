@@ -27,6 +27,7 @@ type RouterParams struct {
 	Auth           *limen.Limen
 	HealthHandler  *handler.HealthHandler
 	ProfileHandler *handler.ProfileHandler
+	ServerHandler  *handler.ServerHandler
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
@@ -42,6 +43,8 @@ func provideRouter(params RouterParams) *chi.Mux {
 		r.Use(auth.RequireAuth(params.Auth))
 
 		r.Get("/profile", params.ProfileHandler.GetPodletProfileByUserId)
+
+		r.Post("/servers/add", params.ServerHandler.CreatePendingServerByUserId)
 	})
 
 	return r

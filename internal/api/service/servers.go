@@ -1,0 +1,51 @@
+package service
+
+import (
+	"context"
+	"time"
+
+	"github.com/SudiMango/podlet/internal/api/repository"
+	"github.com/SudiMango/podlet/internal/api/util"
+	"github.com/SudiMango/podlet/internal/contract"
+)
+
+const (
+	pendingServerIdPrefix string = "pnd"
+	serverIdPrefix        string = "srv"
+)
+
+type ServerService struct {
+	serverRepository *repository.ServerRepository
+}
+
+func NewServerService(serverRepository *repository.ServerRepository) *ServerService {
+	return &ServerService{
+		serverRepository: serverRepository,
+	}
+}
+
+func (s *ServerService) CreatePendingServerByUserId(ctx context.Context, userId string) (*contract.PendingServerResponse, error) {
+
+	token, err := util.GenerateToken()
+	if err != nil {
+		return nil, err
+	}
+
+	tokenHash := util.HashToken(token)
+
+	createdAtTime := time.Now()
+	request := contract.CreatePendingServerRequest{
+		Id:                    util.GenerateID(pendingServerIdPrefix),
+		CreatedAt:             createdAtTime,
+		ExpiresAt:             createdAtTime.Add(10 * time.Minute),
+		RegistrationTokenHash: tokenHash,
+	}
+
+	done, err := s.serverRepository.CreatePendingServerByUserId(ctx, userId, request)
+	if err != nil {
+		return nil, err
+	}
+
+	done.RegistrationToken = &token
+	return done, nil
+}
