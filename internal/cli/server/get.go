@@ -180,7 +180,7 @@ func getPendingServers(cmd *cobra.Command) error {
 
 	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
 
-	fmt.Fprintln(w, "ID\tNAME\tCREATED AT\tEXPIRES AT")
+	fmt.Fprintln(w, "ID\tCREATED AT\tEXPIRES AT")
 
 	for _, server := range response {
 		fmt.Fprintf(w, "%s\t%s\t%s\n",
