@@ -57,10 +57,11 @@ INSERT INTO servers (
     user_id,
     token_hash,
     created_at,
-    updated_at
+    updated_at,
+    last_seen_at
 )
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, name, user_id, token_hash, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, NULL)
+RETURNING id, name, user_id, token_hash, created_at, updated_at, last_seen_at
 `
 
 type CreateServerByUserIdParams struct {
@@ -89,6 +90,7 @@ func (q *Queries) CreateServerByUserId(ctx context.Context, arg CreateServerByUs
 		&i.TokenHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastSeenAt,
 	)
 	return i, err
 }
@@ -131,8 +133,28 @@ func (q *Queries) DeleteServerByUserIdAndServerId(ctx context.Context, arg Delet
 	return result.RowsAffected(), nil
 }
 
+const getServerByTokenHash = `-- name: GetServerByTokenHash :one
+SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at FROM servers
+WHERE token_hash = $1
+`
+
+func (q *Queries) GetServerByTokenHash(ctx context.Context, tokenHash string) (Server, error) {
+	row := q.db.QueryRow(ctx, getServerByTokenHash, tokenHash)
+	var i Server
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.UserID,
+		&i.TokenHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastSeenAt,
+	)
+	return i, err
+}
+
 const getServerByUserIdAndServerId = `-- name: GetServerByUserIdAndServerId :one
-SELECT id, name, user_id, token_hash, created_at, updated_at FROM servers
+SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at FROM servers
 WHERE user_id = $1
     AND id = $2
 `
@@ -152,12 +174,13 @@ func (q *Queries) GetServerByUserIdAndServerId(ctx context.Context, arg GetServe
 		&i.TokenHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastSeenAt,
 	)
 	return i, err
 }
 
 const getServersByUserId = `-- name: GetServersByUserId :many
-SELECT id, name, user_id, token_hash, created_at, updated_at FROM servers
+SELECT id, name, user_id, token_hash, created_at, updated_at, last_seen_at FROM servers
 WHERE user_id = $1
 ORDER BY created_at DESC
 `
@@ -178,6 +201,7 @@ func (q *Queries) GetServersByUserId(ctx context.Context, userID pgtype.UUID) ([
 			&i.TokenHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.LastSeenAt,
 		); err != nil {
 			return nil, err
 		}
@@ -274,7 +298,7 @@ SET
     updated_at = NOW()
 WHERE user_id = $1
     AND id = $2
-RETURNING id, name, user_id, token_hash, created_at, updated_at
+RETURNING id, name, user_id, token_hash, created_at, updated_at, last_seen_at
 `
 
 type UpdateServerByUserIdAndServerIdParams struct {
@@ -293,6 +317,29 @@ func (q *Queries) UpdateServerByUserIdAndServerId(ctx context.Context, arg Updat
 		&i.TokenHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LastSeenAt,
 	)
 	return i, err
+}
+
+const updateServerLastSeenAtByUserIdAndServerId = `-- name: UpdateServerLastSeenAtByUserIdAndServerId :execrows
+UPDATE servers
+SET
+    last_seen_at = $3
+WHERE user_id = $1
+    AND id = $2
+`
+
+type UpdateServerLastSeenAtByUserIdAndServerIdParams struct {
+	UserID     pgtype.UUID
+	ID         string
+	LastSeenAt pgtype.Timestamptz
+}
+
+func (q *Queries) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, arg UpdateServerLastSeenAtByUserIdAndServerIdParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateServerLastSeenAtByUserIdAndServerId, arg.UserID, arg.ID, arg.LastSeenAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

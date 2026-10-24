@@ -11,6 +11,7 @@ import (
 
 	"github.com/SudiMango/podlet/internal/api/auth"
 	"github.com/SudiMango/podlet/internal/api/handler"
+	"github.com/SudiMango/podlet/internal/api/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/thecodearcher/limen"
 	"go.uber.org/fx"
@@ -24,10 +25,11 @@ var Module = fx.Module("server",
 type RouterParams struct {
 	fx.In
 
-	Auth           *limen.Limen
-	HealthHandler  *handler.HealthHandler
-	ProfileHandler *handler.ProfileHandler
-	ServerHandler  *handler.ServerHandler
+	Auth             *limen.Limen
+	ServerRepository *repository.ServerRepository
+	HealthHandler    *handler.HealthHandler
+	ProfileHandler   *handler.ProfileHandler
+	ServerHandler    *handler.ServerHandler
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
@@ -57,6 +59,13 @@ func provideRouter(params RouterParams) *chi.Mux {
 			r.Patch("/{serverId}", params.ServerHandler.UpdateServerByUserIdAndServerId)
 			r.Delete("/{serverId}", params.ServerHandler.DeleteServerByUserIdAndServerId)
 		})
+	})
+
+	// All server agent routes
+	r.Group(func(r chi.Router) {
+		r.Use(auth.RequireAgentAuth(params.ServerRepository))
+
+		r.Post("/agent/heartbeat", params.ServerHandler.UpdateServerLastSeenAtByUserIdAndServerId)
 	})
 
 	return r

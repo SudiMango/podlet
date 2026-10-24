@@ -295,6 +295,21 @@ func (h *ServerHandler) GetServerByUserIdAndServerId(w http.ResponseWriter, r *h
 	util.SendJSON(w, http.StatusOK, server)
 }
 
+func (h *ServerHandler) UpdateServerLastSeenAtByUserIdAndServerId(w http.ResponseWriter, r *http.Request) {
+	identity, ok := auth.AgentIdentityFromContext(r.Context())
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Invalid agent identity"))
+		return
+	}
+
+	if err := h.serverService.UpdateServerLastSeenAtByUserIdAndServerId(r.Context(), identity.UserID, identity.ServerID); err != nil {
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 /*
 Update a registered server owned by a user
 

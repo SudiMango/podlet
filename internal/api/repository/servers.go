@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/contract"
@@ -174,12 +175,13 @@ func (r *ServerRepository) CreateServerByUserId(ctx context.Context, userId stri
 	}
 
 	return &contract.ServerResponse{
-		Id:        done.ID,
-		Name:      done.Name,
-		UserId:    done.UserID.String(),
-		CreatedAt: done.CreatedAt.Time,
-		UpdatedAt: done.UpdatedAt.Time,
-		Token:     nil,
+		Id:         done.ID,
+		Name:       done.Name,
+		UserId:     done.UserID.String(),
+		CreatedAt:  done.CreatedAt.Time,
+		UpdatedAt:  done.UpdatedAt.Time,
+		LastSeenAt: nil,
+		Token:      nil,
 	}, nil
 }
 
@@ -198,12 +200,13 @@ func (r *ServerRepository) GetServersByUserId(ctx context.Context, userId string
 	var response contract.ServersResponse
 	for _, s := range done {
 		sTemp := contract.ServerResponse{
-			Id:        s.ID,
-			Name:      s.Name,
-			UserId:    s.UserID.String(),
-			CreatedAt: s.CreatedAt.Time,
-			UpdatedAt: s.UpdatedAt.Time,
-			Token:     nil,
+			Id:         s.ID,
+			Name:       s.Name,
+			UserId:     s.UserID.String(),
+			CreatedAt:  s.CreatedAt.Time,
+			UpdatedAt:  s.UpdatedAt.Time,
+			LastSeenAt: &s.LastSeenAt.Time,
+			Token:      nil,
 		}
 		response = append(response, sTemp)
 	}
@@ -227,13 +230,56 @@ func (r *ServerRepository) GetServerByUserIdAndServerId(ctx context.Context, use
 	}
 
 	return &contract.ServerResponse{
-		Id:        done.ID,
-		Name:      done.Name,
-		UserId:    done.UserID.String(),
-		CreatedAt: done.CreatedAt.Time,
-		UpdatedAt: done.UpdatedAt.Time,
-		Token:     nil,
+		Id:         done.ID,
+		Name:       done.Name,
+		UserId:     done.UserID.String(),
+		CreatedAt:  done.CreatedAt.Time,
+		UpdatedAt:  done.UpdatedAt.Time,
+		LastSeenAt: &done.LastSeenAt.Time,
+		Token:      nil,
 	}, nil
+}
+
+func (r *ServerRepository) GetServerByTokenHash(ctx context.Context, tokenHash string) (*contract.ServerResponse, error) {
+	done, err := r.store.GetServerByTokenHash(ctx, tokenHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract.ServerResponse{
+		Id:         done.ID,
+		Name:       done.Name,
+		UserId:     done.UserID.String(),
+		CreatedAt:  done.CreatedAt.Time,
+		UpdatedAt:  done.UpdatedAt.Time,
+		LastSeenAt: &done.LastSeenAt.Time,
+		Token:      nil,
+	}, nil
+}
+
+func (r *ServerRepository) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) error {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return err
+	}
+
+	rowsUpdated, err := r.store.UpdateServerLastSeenAtByUserIdAndServerId(ctx, db.UpdateServerLastSeenAtByUserIdAndServerIdParams{
+		UserID: pgUserId,
+		ID:     serverId,
+		LastSeenAt: pgtype.Timestamptz{
+			Time:  time.Now(),
+			Valid: true,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if rowsUpdated == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }
 
 func (r *ServerRepository) UpdateServerByUserIdAndServerId(ctx context.Context, userId string, serverId string, name string) (*contract.ServerResponse, error) {
@@ -253,12 +299,13 @@ func (r *ServerRepository) UpdateServerByUserIdAndServerId(ctx context.Context, 
 	}
 
 	return &contract.ServerResponse{
-		Id:        done.ID,
-		Name:      done.Name,
-		UserId:    done.UserID.String(),
-		CreatedAt: done.CreatedAt.Time,
-		UpdatedAt: done.UpdatedAt.Time,
-		Token:     nil,
+		Id:         done.ID,
+		Name:       done.Name,
+		UserId:     done.UserID.String(),
+		CreatedAt:  done.CreatedAt.Time,
+		UpdatedAt:  done.UpdatedAt.Time,
+		LastSeenAt: &done.LastSeenAt.Time,
+		Token:      nil,
 	}, nil
 }
 
@@ -279,6 +326,8 @@ func (r *ServerRepository) DeleteServerByUserIdAndServerId(ctx context.Context, 
 	if rowsDeleted == 0 {
 		return pgx.ErrNoRows
 	}
+
+	// TODO: ensure server agent deletes with this
 
 	return nil
 }

@@ -26,12 +26,13 @@ type PendingServerResponse struct {
 type PendingServersResponse []PendingServerResponse
 
 type ServerResponse struct {
-	Id        string    `json:"id"`
-	Name      string    `json:"name"`
-	UserId    string    `json:"user_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Token     *string   `json:"token"`
+	Id         string     `json:"id"`
+	Name       string     `json:"name"`
+	UserId     string     `json:"user_id"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
+	Token      *string    `json:"token"`
+	LastSeenAt *time.Time `json:"last_seen_at"`
 }
 
 type ServersResponse []ServerResponse
