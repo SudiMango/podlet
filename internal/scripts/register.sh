@@ -75,7 +75,7 @@ mkdir -p "$CONFIG_DIR"
 chmod 700 "$CONFIG_DIR"
 umask 077
 
-jq '{id, name, token}' "$BODY_FILE" > "$CONFIG_FILE"
+jq '{id, token}' "$BODY_FILE" > "$CONFIG_FILE"
 chmod 600 "$CONFIG_FILE"
 
 echo "Server registered successfully!"
