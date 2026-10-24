@@ -54,7 +54,7 @@ func NewLimen(pool *pgxpool.Pool) (*limen.Limen, error) {
 				oauth.WithProviders(githubProvider),
 				oauth.WithMapProfileToUser(githubProfileFields),
 			),
-			newGitHubDevicePlugin(os.Getenv("GITHUB_CLIENT_ID"), githubProvider),
+			newGithubDevicePlugin(os.Getenv("GITHUB_CLIENT_ID"), githubProvider),
 		},
 	})
 }

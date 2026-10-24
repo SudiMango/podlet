@@ -4,6 +4,15 @@ import (
 	"time"
 )
 
+// Request
+type GithubDeviceCompleteRequest struct {
+	DeviceCode string    `json:"device_code"`
+	ExpiresAt  time.Time `json:"expires_at"`
+	Interval   int64     `json:"interval"`
+}
+
+// Response
+
 type GithubDeviceStartResponse struct {
 	DeviceCode              string    `json:"device_code"`
 	UserCode                string    `json:"user_code"`
@@ -11,10 +20,4 @@ type GithubDeviceStartResponse struct {
 	VerificationURIComplete string    `json:"verification_uri_complete,omitempty"`
 	ExpiresAt               time.Time `json:"expires_at"`
 	Interval                int64     `json:"interval"`
-}
-
-type githubDeviceCompleteRequest struct {
-	DeviceCode string    `json:"device_code"`
-	ExpiresAt  time.Time `json:"expires_at"`
-	Interval   int64     `json:"interval"`
 }

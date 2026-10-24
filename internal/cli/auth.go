@@ -1,16 +1,21 @@
 package cli
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/SudiMango/podlet/internal/api/auth"
+	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
 )
 
@@ -28,8 +33,10 @@ var loginCmd = &cobra.Command{
 			return err
 		}
 
-		// TODO: Save this in the OS keyring.
-		_ = token
+		if err = keyring.SaveToken(token); err != nil {
+			fmt.Fprintf(cmd.ErrOrStderr(), "Failed to save token: %v\n", err)
+			return err
+		}
 
 		fmt.Fprintln(cmd.OutOrStdout(), "Logged in successfully")
 		return nil
@@ -52,21 +59,26 @@ func login(ctx context.Context, cmd *cobra.Command) (string, error) {
 		return "", fmt.Errorf("start login: %w", err)
 	}
 
-	fmt.Fprintf(
-		cmd.OutOrStdout(),
-		"Open %s and enter code %s\n",
-		authorization.VerificationURI,
-		authorization.UserCode,
-	)
+	out := cmd.OutOrStdout()
+	fmt.Fprintf(out, "First copy your one-time code: %s\n", authorization.UserCode)
+	fmt.Fprintf(out, "Press Enter to open %s in your browser... ", authorization.VerificationURI)
 
-	// This request blocks while the API polls GitHub for authorization.
+	if _, err := bufio.NewReader(cmd.InOrStdin()).ReadString('\n'); err != nil && !errors.Is(err, io.EOF) {
+		return "", fmt.Errorf("wait for confirmation: %w", err)
+	}
+
+	if err := openBrowser(authorization.VerificationURI); err != nil {
+		fmt.Fprintf(out, "Failed opening a web browser at %s\n", authorization.VerificationURI)
+		fmt.Fprintf(out, "Open %s in your browser and enter code %s\n", authorization.VerificationURI, authorization.UserCode)
+	}
+
 	headers, err := postJSON(
 		ctx,
 		baseURL+"/auth/device/github/complete",
-		map[string]any{
-			"device_code": authorization.DeviceCode,
-			"expires_at":  authorization.ExpiresAt,
-			"interval":    authorization.Interval,
+		auth.GithubDeviceCompleteRequest{
+			DeviceCode: authorization.DeviceCode,
+			ExpiresAt:  authorization.ExpiresAt,
+			Interval:   authorization.Interval,
 		},
 		nil,
 	)
@@ -80,6 +92,21 @@ func login(ctx context.Context, cmd *cobra.Command) (string, error) {
 	}
 
 	return token, nil
+}
+
+func openBrowser(url string) error {
+	var command *exec.Cmd
+
+	switch runtime.GOOS {
+	case "darwin":
+		command = exec.Command("open", url)
+	case "windows":
+		command = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		command = exec.Command("xdg-open", url)
+	}
+
+	return command.Run()
 }
 
 func postJSON(
