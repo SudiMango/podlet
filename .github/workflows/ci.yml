@@ -36,8 +36,8 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Validate installer
-        run: bash -n internal/scripts/install.sh
+      - name: Validate shell scripts
+        run: find internal/scripts -type f -name '*.sh' -exec bash -n {} \;
 
       - name: Build API image
         run: docker build --tag podlet-api:test .

@@ -29,6 +29,7 @@ func (RootCommand) Command() *cobra.Command {
 
 	cmd.AddCommand(
 		HealthCommand{}.Command(),
+		UninstallCommand{}.Command(),
 		authcmd.AuthCommand{}.Command(),
 		servercmd.ServerCommand{}.Command(),
 	)

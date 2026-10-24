@@ -3,9 +3,12 @@ set -euo pipefail
 
 readonly API_URL="https://api.podlet.dev"
 readonly AGENT_VERSION="v0.1.0"
-readonly DOWNLOAD_BASE_URL="https://downloads.podlet.dev/server-agent/${AGENT_VERSION}"
+readonly DOWNLOAD_ROOT_URL="https://downloads.podlet.dev/server-agent"
+readonly DOWNLOAD_BASE_URL="${DOWNLOAD_ROOT_URL}/${AGENT_VERSION}"
 readonly BINARY_DIR="${HOME}/.local/bin"
 readonly BINARY_PATH="${BINARY_DIR}/podlet-agent"
+readonly DATA_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/podlet"
+readonly UNINSTALLER_PATH="${DATA_DIR}/uninstall-server-agent.sh"
 readonly USER_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
 readonly CONFIG_DIR="${USER_CONFIG_DIR}/podlet"
 readonly CONFIG_FILE="${CONFIG_DIR}/server.json"
@@ -68,6 +71,7 @@ trap 'rm -rf "$TEMP_DIR"' EXIT
 echo "Downloading Podlet agent ${AGENT_VERSION}..."
 curl -fsSL "${DOWNLOAD_BASE_URL}/${BINARY_NAME}" -o "${TEMP_DIR}/${BINARY_NAME}"
 curl -fsSL "${DOWNLOAD_BASE_URL}/checksums.txt" -o "${TEMP_DIR}/checksums.txt"
+curl -fsSL "${DOWNLOAD_ROOT_URL}/uninstall-server-agent.sh" -o "${TEMP_DIR}/uninstall-server-agent.sh"
 
 EXPECTED_CHECKSUM="$(awk -v filename="$BINARY_NAME" '$2 == filename { print $1 }' "${TEMP_DIR}/checksums.txt")"
 if [[ -z "$EXPECTED_CHECKSUM" ]]; then
@@ -79,6 +83,8 @@ printf '%s  %s\n' "$EXPECTED_CHECKSUM" "${TEMP_DIR}/${BINARY_NAME}" | sha256sum 
 
 install -d -m 0755 "$BINARY_DIR"
 install -m 0755 "${TEMP_DIR}/${BINARY_NAME}" "$BINARY_PATH"
+install -d -m 0755 "$DATA_DIR"
+install -m 0755 "${TEMP_DIR}/uninstall-server-agent.sh" "$UNINSTALLER_PATH"
 install -d -m 0700 "$CONFIG_DIR"
 install -d -m 0755 "$SERVICE_DIR"
 
@@ -154,6 +160,7 @@ fi
 SERVER_ID="$(jq -r '.id' "${TEMP_DIR}/registration.json")"
 echo "Podlet agent installed successfully."
 echo "Server ID: ${SERVER_ID}"
+echo "Uninstaller: ${UNINSTALLER_PATH}"
 echo "Status: systemctl --user status podlet-agent"
 echo "Logs: journalctl --user -u podlet-agent -f"
 
