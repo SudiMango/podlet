@@ -5,29 +5,20 @@ import (
 	"errors"
 	"io"
 	"net/http"
-
-	"github.com/thecodearcher/limen"
 )
 
 const maxJSONBodySize = 1 << 20
 
-func SendAPIResponse(
-	responder *limen.Responder,
-	w http.ResponseWriter,
-	r *http.Request,
-	response any,
-	status ...int,
-) error {
-	if err, ok := response.(error); ok {
-		return responder.Error(w, r, err)
-	}
+func SendJSON(w http.ResponseWriter, status int, response any) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(response)
+}
 
-	responseStatus := http.StatusOK
-	if len(status) > 0 {
-		responseStatus = status[0]
-	}
-
-	return responder.JSON(w, r, responseStatus, response)
+func SendError(w http.ResponseWriter, status int, err error) error {
+	return SendJSON(w, status, map[string]string{
+		"message": err.Error(),
+	})
 }
 
 func DecodeJSON(r *http.Request, target any) error {
