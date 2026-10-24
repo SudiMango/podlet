@@ -3,7 +3,7 @@ ifneq (,$(wildcard .env))
     export
 endif
 
-.PHONY: api podlet sqlc migration-up migration-down migration-new db db-down seed DB_CHECK setup
+.PHONY: api podlet sqlc migration-up migration-down migration-new db db-down seed DB_CHECK setup agent
 .DEFAULT_GOAL := api
 
 POSTGRES_HOST ?= localhost
@@ -24,6 +24,10 @@ api:
 
 podlet:
 	go run cmd/cli/main.go $(args)
+
+
+agent:
+	go run cmd/agent/main.go
 
 
 # database related commands
