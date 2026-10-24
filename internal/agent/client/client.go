@@ -69,7 +69,7 @@ func (c *Client) DoJSON(
 		return fmt.Errorf("API returned %s", response.Status)
 	}
 
-	if output != nil {
+	if output != nil && response.StatusCode != http.StatusNoContent {
 		if err := json.NewDecoder(response.Body).Decode(output); err != nil {
 			return fmt.Errorf("decode response: %w", err)
 		}
