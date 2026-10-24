@@ -2,7 +2,6 @@ package auth
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -22,7 +21,7 @@ func (LoginCommand) Command() *cobra.Command {
 		Use:   "login",
 		Short: "Login to Podlet",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			token, err := login(cmd.Context(), cmd)
+			token, err := login(cmd)
 			if err != nil {
 				return err
 			}
@@ -37,7 +36,8 @@ func (LoginCommand) Command() *cobra.Command {
 	}
 }
 
-func login(ctx context.Context, cmd *cobra.Command) (string, error) {
+func login(cmd *cobra.Command) (string, error) {
+	// Initiate login
 	api, err := client.New()
 	if err != nil {
 		return "", err
@@ -45,7 +45,7 @@ func login(ctx context.Context, cmd *cobra.Command) (string, error) {
 
 	var authorization contract.GithubDeviceStartResponse
 	if _, err := api.DoJSON(
-		ctx,
+		cmd.Context(),
 		http.MethodPost,
 		"/auth/device/github/start",
 		nil,
@@ -55,6 +55,7 @@ func login(ctx context.Context, cmd *cobra.Command) (string, error) {
 		return "", fmt.Errorf("start login: %w", err)
 	}
 
+	// Display login info on terminal
 	out := cmd.OutOrStdout()
 	fmt.Fprintf(out, "First copy your one-time code: %s\n", authorization.UserCode)
 	fmt.Fprintf(out, "Press Enter to open %s in your browser... ", authorization.VerificationURI)
@@ -63,13 +64,15 @@ func login(ctx context.Context, cmd *cobra.Command) (string, error) {
 		return "", fmt.Errorf("wait for confirmation: %w", err)
 	}
 
+	// Attempt to open browser
 	if err := browser.Open(authorization.VerificationURI); err != nil {
 		fmt.Fprintf(out, "Failed opening a web browser at %s\n", authorization.VerificationURI)
 		fmt.Fprintf(out, "Open %s in your browser and enter code %s\n", authorization.VerificationURI, authorization.UserCode)
 	}
 
+	// Complete login
 	headers, err := api.DoJSON(
-		ctx,
+		cmd.Context(),
 		http.MethodPost,
 		"/auth/device/github/complete",
 		contract.GithubDeviceCompleteRequest{

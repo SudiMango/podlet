@@ -32,11 +32,13 @@ func (MeCommand) Command() *cobra.Command {
 }
 
 func getCurrentProfile(ctx context.Context) (*contract.PodletProfileResponse, error) {
+	// Load existing token
 	token, err := keyring.LoadToken()
 	if err != nil {
 		return nil, fmt.Errorf("load session token: %w; run `podlet auth login`", err)
 	}
 
+	// Fetch current user
 	api, err := client.New()
 	if err != nil {
 		return nil, err
