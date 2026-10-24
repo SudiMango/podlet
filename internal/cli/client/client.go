@@ -55,10 +55,7 @@ func (c *Client) DoJSON(
 	}
 
 	request.Header.Set("Accept", "application/json")
-
-	if input != nil {
-		request.Header.Set("Content-Type", "application/json")
-	}
+	request.Header.Set("Content-Type", "application/json")
 
 	if token != "" {
 		request.Header.Set("Authorization", "Bearer "+token)

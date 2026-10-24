@@ -14,6 +14,7 @@ func (AuthCommand) Command() *cobra.Command {
 		LoginCommand{}.Command(),
 		LogoutCommand{}.Command(),
 		MeCommand{}.Command(),
+		RevokeSessionsCommand{}.Command(),
 	)
 
 	return cmd
