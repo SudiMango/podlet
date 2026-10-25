@@ -56,6 +56,41 @@ func (q *Queries) DeleteGithubInstallationState(ctx context.Context, id string) 
 	return err
 }
 
+const getGithubInstallationsByUserId = `-- name: GetGithubInstallationsByUserId :many
+SELECT id, user_id, account_id, account_login, account_type, repository_selection, created_at, updated_at FROM github_installations
+WHERE user_id = $1
+ORDER BY created_at
+`
+
+func (q *Queries) GetGithubInstallationsByUserId(ctx context.Context, userID pgtype.UUID) ([]GithubInstallation, error) {
+	rows, err := q.db.Query(ctx, getGithubInstallationsByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GithubInstallation{}
+	for rows.Next() {
+		var i GithubInstallation
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.AccountID,
+			&i.AccountLogin,
+			&i.AccountType,
+			&i.RepositorySelection,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getStateByStateId = `-- name: GetStateByStateId :one
 SELECT id, user_id, created_at, expires_at FROM github_installation_states
 WHERE id = $1

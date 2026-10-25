@@ -12,6 +12,7 @@ func (ReposCommand) Command() *cobra.Command {
 
 	cmd.AddCommand(
 		ConnectCommand{}.Command(),
+		ListCommand{}.Command(),
 	)
 
 	return cmd

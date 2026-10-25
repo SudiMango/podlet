@@ -51,6 +51,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 		r.Get("/profile", params.ProfileHandler.GetPodletProfileByUserId)
 
 		r.Post("/github/installations/start", params.GithubHandler.StartInstallation)
+		r.Get("/github/repositories", params.GithubHandler.GetRepositoriesByUserId)
 
 		r.Route("/servers", func(r chi.Router) {
 			r.Post("/add", params.ServerHandler.CreatePendingServerByUserId)

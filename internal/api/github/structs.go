@@ -21,8 +21,8 @@ type Repository struct {
 	Name          string `json:"name"`
 	FullName      string `json:"full_name"`
 	Private       bool   `json:"private"`
-	HTMLURL       string `json:"html_url"`
-	CloneURL      string `json:"clone_url"`
+	HtmlUrl       string `json:"html_url"`
+	CloneUrl      string `json:"clone_url"`
 	DefaultBranch string `json:"default_branch"`
 }
 

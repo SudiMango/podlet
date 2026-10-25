@@ -31,6 +31,11 @@ ON CONFLICT (id) DO UPDATE SET
     updated_at = now()
 RETURNING *;
 
+-- name: GetGithubInstallationsByUserId :many
+SELECT * FROM github_installations
+WHERE user_id = $1
+ORDER BY created_at;
+
 -- name: DeleteGithubInstallationState :exec
 DELETE FROM github_installation_states
 WHERE id = $1;

@@ -11,6 +11,7 @@ import (
 	"github.com/SudiMango/podlet/internal/api/github"
 	"github.com/SudiMango/podlet/internal/api/repository"
 	"github.com/SudiMango/podlet/internal/api/util"
+	"github.com/SudiMango/podlet/internal/contract"
 )
 
 var (
@@ -125,6 +126,48 @@ func (s *GithubService) UpsertGithubInstallationByUserId(ctx context.Context, us
 		AccountType:         installation.Account.Type,
 		RepositorySelection: installation.RepositorySelection,
 	})
+}
+
+func (s *GithubService) GetGithubRepositoriesByUserId(ctx context.Context, userId string) (contract.GithubRepositoriesResponse, error) {
+	installations, err := s.githubRepository.GetGithubInstallationsByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	response := make(contract.GithubRepositoriesResponse, 0)
+	seen := make(map[int64]struct{})
+
+	for _, installation := range installations {
+		token, err := s.githubClient.CreateInstallationToken(ctx, installation.Id, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		result, err := s.githubClient.ListRepositories(ctx, token.Token)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, repository := range result.Repositories {
+			if _, exists := seen[repository.Id]; exists {
+				continue
+			}
+
+			seen[repository.Id] = struct{}{}
+			response = append(response, contract.GithubRepositoryResponse{
+				Id:             repository.Id,
+				InstallationId: installation.Id,
+				Name:           repository.Name,
+				FullName:       repository.FullName,
+				Private:        repository.Private,
+				HtmlUrl:        repository.HtmlUrl,
+				CloneUrl:       repository.CloneUrl,
+				DefaultBranch:  repository.DefaultBranch,
+			})
+		}
+	}
+
+	return response, nil
 }
 
 func (s *GithubService) DeleteGithubInstallationStateByStateId(ctx context.Context, stateId string) error {

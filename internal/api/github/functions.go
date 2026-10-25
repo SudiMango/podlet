@@ -2,7 +2,6 @@ package github
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -26,7 +25,7 @@ func (c *Client) GetInstallation(ctx context.Context, installationID int64) (*In
 		http.StatusOK,
 		&installation,
 	); err != nil {
-		return nil, fmt.Errorf("get GitHub installation: %w", err)
+		return nil, err
 	}
 
 	return &installation, nil
@@ -56,25 +55,36 @@ func (c *Client) CreateInstallationToken(ctx context.Context, installationID int
 		http.StatusCreated,
 		&result,
 	); err != nil {
-		return nil, fmt.Errorf("create GitHub installation token: %w", err)
+		return nil, err
 	}
 
 	return &result, nil
 }
 
 func (c *Client) ListRepositories(ctx context.Context, installationToken string) (*RepositoriesResponse, error) {
-	var result RepositoriesResponse
+	result := RepositoriesResponse{Repositories: make([]Repository, 0)}
 
-	if err := c.doJSON(
-		ctx,
-		http.MethodGet,
-		"/installation/repositories?per_page=100",
-		installationToken,
-		nil,
-		http.StatusOK,
-		&result,
-	); err != nil {
-		return nil, fmt.Errorf("list GitHub repositories: %w", err)
+	for page := 1; ; page++ {
+		var current RepositoriesResponse
+		path := "/installation/repositories?per_page=100&page=" + strconv.Itoa(page)
+
+		if err := c.doJSON(
+			ctx,
+			http.MethodGet,
+			path,
+			installationToken,
+			nil,
+			http.StatusOK,
+			&current,
+		); err != nil {
+			return nil, err
+		}
+
+		result.TotalCount = current.TotalCount
+		result.Repositories = append(result.Repositories, current.Repositories...)
+		if len(current.Repositories) < 100 {
+			break
+		}
 	}
 
 	return &result, nil

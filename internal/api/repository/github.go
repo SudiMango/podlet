@@ -94,6 +94,35 @@ func (r *GithubRepository) UpsertGithubInstallation(ctx context.Context, userId 
 	}, nil
 }
 
+func (r *GithubRepository) GetGithubInstallationsByUserId(ctx context.Context, userId string) ([]dto.GithubInstallation, error) {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return nil, err
+	}
+
+	results, err := r.store.GetGithubInstallationsByUserId(ctx, pgUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	installations := make([]dto.GithubInstallation, 0, len(results))
+	for _, result := range results {
+		installations = append(installations, dto.GithubInstallation{
+			Id:                  result.ID,
+			UserId:              result.UserID.String(),
+			AccountId:           result.AccountID,
+			AccountLogin:        result.AccountLogin,
+			AccountType:         result.AccountType,
+			RepositorySelection: result.RepositorySelection,
+			CreatedAt:           result.CreatedAt.Time,
+			UpdatedAt:           result.UpdatedAt.Time,
+		})
+	}
+
+	return installations, nil
+}
+
 func (r *GithubRepository) DeleteGithubInstallationState(ctx context.Context, stateId string) error {
 	return r.store.DeleteGithubInstallationState(ctx, stateId)
 }

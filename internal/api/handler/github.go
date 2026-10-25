@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/SudiMango/podlet/internal/api/auth"
-	"github.com/SudiMango/podlet/internal/api/github"
 	"github.com/SudiMango/podlet/internal/api/service"
 	"github.com/SudiMango/podlet/internal/api/util"
 	"github.com/SudiMango/podlet/internal/contract"
@@ -16,13 +15,11 @@ import (
 
 type GithubHandler struct {
 	githubService *service.GithubService
-	githubClient  *github.Client
 }
 
-func NewGithubHandler(githubService *service.GithubService, githubClient *github.Client) *GithubHandler {
+func NewGithubHandler(githubService *service.GithubService) *GithubHandler {
 	return &GithubHandler{
 		githubService: githubService,
-		githubClient:  githubClient,
 	}
 }
 
@@ -61,6 +58,40 @@ func (h *GithubHandler) StartInstallation(w http.ResponseWriter, r *http.Request
 		InstallationUrl: "https://github.com/apps/" + os.Getenv("GITHUB_APP_NAME") + "/installations/new?state=" + created.Id,
 		ExpiresAt:       created.ExpiresAt,
 	})
+}
+
+/*
+List the GitHub repositories available to the current user through installed GitHub Apps
+
+API URL: GET /github/repositories
+
+Args:
+
+	none
+
+Returns:
+
+	the repositories accessible to the user's GitHub App installations (HTTP 200).
+
+Raises:
+
+	401: unauthorized user
+	500: unable to load installations or repositories
+*/
+func (h *GithubHandler) GetRepositoriesByUserId(w http.ResponseWriter, r *http.Request) {
+	userId, ok := auth.CurrentUserID(r)
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	repositories, err := h.githubService.GetGithubRepositoriesByUserId(r.Context(), userId)
+	if err != nil {
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	util.SendJSON(w, http.StatusOK, repositories)
 }
 
 /*
