@@ -175,13 +175,14 @@ func (r *ServerRepository) CreateServerByUserId(ctx context.Context, userId stri
 	}
 
 	return &contract.ServerResponse{
-		Id:         done.ID,
-		Name:       done.Name,
-		UserId:     done.UserID.String(),
-		CreatedAt:  done.CreatedAt.Time,
-		UpdatedAt:  done.UpdatedAt.Time,
-		LastSeenAt: nil,
-		Token:      nil,
+		Id:             done.ID,
+		Name:           done.Name,
+		UserId:         done.UserID.String(),
+		CreatedAt:      done.CreatedAt.Time,
+		UpdatedAt:      done.UpdatedAt.Time,
+		LastSeenAt:     nil,
+		Token:          nil,
+		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
 	}, nil
 }
 
@@ -200,13 +201,14 @@ func (r *ServerRepository) GetServersByUserId(ctx context.Context, userId string
 	var response contract.ServersResponse
 	for _, s := range done {
 		sTemp := contract.ServerResponse{
-			Id:         s.ID,
-			Name:       s.Name,
-			UserId:     s.UserID.String(),
-			CreatedAt:  s.CreatedAt.Time,
-			UpdatedAt:  s.UpdatedAt.Time,
-			LastSeenAt: &s.LastSeenAt.Time,
-			Token:      nil,
+			Id:             s.ID,
+			Name:           s.Name,
+			UserId:         s.UserID.String(),
+			CreatedAt:      s.CreatedAt.Time,
+			UpdatedAt:      s.UpdatedAt.Time,
+			LastSeenAt:     &s.LastSeenAt.Time,
+			Token:          nil,
+			LifecycleState: dto.ServerLifecycleState(s.LifecycleState),
 		}
 		response = append(response, sTemp)
 	}
@@ -230,13 +232,14 @@ func (r *ServerRepository) GetServerByUserIdAndServerId(ctx context.Context, use
 	}
 
 	return &contract.ServerResponse{
-		Id:         done.ID,
-		Name:       done.Name,
-		UserId:     done.UserID.String(),
-		CreatedAt:  done.CreatedAt.Time,
-		UpdatedAt:  done.UpdatedAt.Time,
-		LastSeenAt: &done.LastSeenAt.Time,
-		Token:      nil,
+		Id:             done.ID,
+		Name:           done.Name,
+		UserId:         done.UserID.String(),
+		CreatedAt:      done.CreatedAt.Time,
+		UpdatedAt:      done.UpdatedAt.Time,
+		LastSeenAt:     &done.LastSeenAt.Time,
+		Token:          nil,
+		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
 	}, nil
 }
 
@@ -247,13 +250,14 @@ func (r *ServerRepository) GetServerByTokenHash(ctx context.Context, tokenHash s
 	}
 
 	return &contract.ServerResponse{
-		Id:         done.ID,
-		Name:       done.Name,
-		UserId:     done.UserID.String(),
-		CreatedAt:  done.CreatedAt.Time,
-		UpdatedAt:  done.UpdatedAt.Time,
-		LastSeenAt: &done.LastSeenAt.Time,
-		Token:      nil,
+		Id:             done.ID,
+		Name:           done.Name,
+		UserId:         done.UserID.String(),
+		CreatedAt:      done.CreatedAt.Time,
+		UpdatedAt:      done.UpdatedAt.Time,
+		LastSeenAt:     &done.LastSeenAt.Time,
+		Token:          nil,
+		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
 	}, nil
 }
 
@@ -301,13 +305,14 @@ func (r *ServerRepository) UpdateServerByUserIdAndServerId(ctx context.Context, 
 	}
 
 	return &contract.ServerResponse{
-		Id:         done.ID,
-		Name:       done.Name,
-		UserId:     done.UserID.String(),
-		CreatedAt:  done.CreatedAt.Time,
-		UpdatedAt:  done.UpdatedAt.Time,
-		LastSeenAt: &done.LastSeenAt.Time,
-		Token:      nil,
+		Id:             done.ID,
+		Name:           done.Name,
+		UserId:         done.UserID.String(),
+		CreatedAt:      done.CreatedAt.Time,
+		UpdatedAt:      done.UpdatedAt.Time,
+		LastSeenAt:     &done.LastSeenAt.Time,
+		Token:          nil,
+		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
 	}, nil
 }
 
