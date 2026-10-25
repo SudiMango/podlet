@@ -4,13 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/SudiMango/podlet/internal/api/repository"
 	"github.com/SudiMango/podlet/internal/api/util"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/thecodearcher/limen"
 )
 
@@ -68,36 +65,6 @@ func RequireAgentAuth(servers *repository.ServerRepository) func(http.Handler) h
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-}
-
-func GenerateGithubAppJWT() (string, error) {
-	cliendId := os.Getenv("GITHUB_CLIENT_ID")
-	privateKeyPath := os.Getenv("GITHUB_PRIVATE_KEY")
-
-	privateKeyPEM, err := os.ReadFile(privateKeyPath)
-	if err != nil {
-		return "", err
-	}
-
-	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyPEM)
-	if err != nil {
-		return "", err
-	}
-
-	now := time.Now()
-	claims := jwt.RegisteredClaims{
-		Issuer:    cliendId,
-		IssuedAt:  jwt.NewNumericDate(now.Add(-60 * time.Second)),
-		ExpiresAt: jwt.NewNumericDate(now.Add(9 * time.Minute)),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	signed, err := token.SignedString(privateKey)
-	if err != nil {
-		return "", err
-	}
-
-	return signed, nil
 }
 
 // Retrieve user session
