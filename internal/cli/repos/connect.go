@@ -1,4 +1,4 @@
-package auth
+package repos
 
 import (
 	"fmt"
@@ -10,12 +10,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type ReposCommand struct{}
+type ConnectCommand struct{}
 
-func (ReposCommand) Command() *cobra.Command {
+func (ConnectCommand) Command() *cobra.Command {
 	return &cobra.Command{
-		Use:   "repos",
-		Short: "Authorize what GitHub repositories you want Podlet to have access to",
+		Use:   "connect",
+		Short: "Authorize what GitHub repositories Podlet can read",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return startInstallation(cmd)
 		},
