@@ -2,18 +2,22 @@ package github
 
 import "time"
 
-type InstallationToken struct {
-	Token     string    `json:"token"`
-	ExpiresAt time.Time `json:"expires_at"`
-}
+// Request
 
 type createInstallationTokenRequest struct {
 	RepositoryIDs []int64           `json:"repository_ids,omitempty"`
 	Permissions   map[string]string `json:"permissions,omitempty"`
 }
 
+// Response
+
+type InstallationToken struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
 type Repository struct {
-	ID            int64  `json:"id"`
+	Id            int64  `json:"id"`
 	Name          string `json:"name"`
 	FullName      string `json:"full_name"`
 	Private       bool   `json:"private"`
@@ -28,8 +32,8 @@ type RepositoriesResponse struct {
 }
 
 type Installation struct {
-	ID                  int64      `json:"id"`
-	AppID               int64      `json:"app_id"`
+	Id                  int64      `json:"id"`
+	AppId               int64      `json:"app_id"`
 	AppSlug             string     `json:"app_slug"`
 	RepositorySelection string     `json:"repository_selection"`
 	SuspendedAt         *time.Time `json:"suspended_at"`
@@ -40,7 +44,7 @@ type Installation struct {
 }
 
 type Account struct {
-	ID    int64  `json:"id"`
+	Id    int64  `json:"id"`
 	Login string `json:"login"`
 	Type  string `json:"type"`
 }

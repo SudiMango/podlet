@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/SudiMango/podlet/internal/api/dto"
-	"github.com/SudiMango/podlet/internal/contract"
 	db "github.com/SudiMango/podlet/internal/sql/database"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -19,7 +18,7 @@ func NewGithubRepository(store *db.Queries) *GithubRepository {
 	}
 }
 
-func (r *GithubRepository) CreateInstallationStateByUserId(ctx context.Context, userId string, request dto.CreateGithubInstallationStateRequest) (*contract.CreateGithubInstallationStateResponse, error) {
+func (r *GithubRepository) CreateInstallationStateByUserId(ctx context.Context, userId string, request dto.CreateGithubInstallationStateRequest) (*dto.GithubInstallationState, error) {
 	var pgUserId pgtype.UUID
 
 	if err := pgUserId.Scan(userId); err != nil {
@@ -42,7 +41,7 @@ func (r *GithubRepository) CreateInstallationStateByUserId(ctx context.Context, 
 		return nil, err
 	}
 
-	return &contract.CreateGithubInstallationStateResponse{
+	return &dto.GithubInstallationState{
 		Id:        result.ID,
 		UserId:    result.UserID.String(),
 		CreatedAt: result.CreatedAt.Time,
@@ -50,13 +49,13 @@ func (r *GithubRepository) CreateInstallationStateByUserId(ctx context.Context, 
 	}, nil
 }
 
-func (r *GithubRepository) GetStateByStateId(ctx context.Context, stateId string) (*dto.GetStateResponse, error) {
+func (r *GithubRepository) GetStateByStateId(ctx context.Context, stateId string) (*dto.GithubInstallationState, error) {
 	result, err := r.store.GetStateByStateId(ctx, stateId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &dto.GetStateResponse{
+	return &dto.GithubInstallationState{
 		Id:        result.ID,
 		UserId:    result.UserID.String(),
 		CreatedAt: result.CreatedAt.Time,

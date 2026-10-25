@@ -18,7 +18,7 @@ type UpsertGithubInstallationRequest struct {
 	RepositorySelection string `json:"-"`
 }
 
-// Response
+// Internal
 
 type GithubInstallationState struct {
 	Id        string    `json:"-"`
