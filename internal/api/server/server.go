@@ -42,6 +42,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 	r.Handle("/auth/*", params.Auth.Handler())
 
 	r.Post("/servers/register", params.ServerHandler.CreateServerByUserId)
+	r.Get("/github/installations/setup", params.GithubHandler.VerifyInstallation)
 
 	// All protected routes
 	r.Group(func(r chi.Router) {
@@ -49,10 +50,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 
 		r.Get("/profile", params.ProfileHandler.GetPodletProfileByUserId)
 
-		r.Route("/github", func(r chi.Router) {
-			r.Post("/installations/start", params.GithubHandler.StartInstallation)
-			r.Post("/installations/setup", nil)
-		})
+		r.Post("/github/installations/start", params.GithubHandler.StartInstallation)
 
 		r.Route("/servers", func(r chi.Router) {
 			r.Post("/add", params.ServerHandler.CreatePendingServerByUserId)

@@ -14,12 +14,14 @@ type Querier interface {
 	CreateInstallationStateByUserId(ctx context.Context, arg CreateInstallationStateByUserIdParams) (GithubInstallationState, error)
 	CreatePendingServerByUserId(ctx context.Context, arg CreatePendingServerByUserIdParams) (PendingServer, error)
 	CreateServerByUserId(ctx context.Context, arg CreateServerByUserIdParams) (Server, error)
+	DeleteGithubInstallationState(ctx context.Context, id string) error
 	DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) (int64, error)
 	DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) (int64, error)
 	GetPodletProfileByUserId(ctx context.Context, id pgtype.UUID) (GetPodletProfileByUserIdRow, error)
 	GetServerByTokenHash(ctx context.Context, tokenHash string) (Server, error)
 	GetServerByUserIdAndServerId(ctx context.Context, arg GetServerByUserIdAndServerIdParams) (Server, error)
 	GetServersByUserId(ctx context.Context, userID pgtype.UUID) ([]Server, error)
+	GetStateByStateId(ctx context.Context, id string) (GithubInstallationState, error)
 	GetValidPendingServerByUserIdAndPendingServerId(ctx context.Context, arg GetValidPendingServerByUserIdAndPendingServerIdParams) (PendingServer, error)
 	GetValidPendingServerRegistrationTokenHash(ctx context.Context, registrationTokenHash string) (PendingServer, error)
 	GetValidPendingServersByUserId(ctx context.Context, userID pgtype.UUID) ([]PendingServer, error)
@@ -27,6 +29,7 @@ type Querier interface {
 	PingDatabase(ctx context.Context) (int32, error)
 	UpdateServerByUserIdAndServerId(ctx context.Context, arg UpdateServerByUserIdAndServerIdParams) (Server, error)
 	UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, arg UpdateServerLastSeenAtByUserIdAndServerIdParams) (ServerLifecycleState, error)
+	UpsertGithubInstallation(ctx context.Context, arg UpsertGithubInstallationParams) (GithubInstallation, error)
 }
 
 var _ Querier = (*Queries)(nil)

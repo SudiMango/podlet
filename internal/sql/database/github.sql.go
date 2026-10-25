@@ -45,3 +45,82 @@ func (q *Queries) CreateInstallationStateByUserId(ctx context.Context, arg Creat
 	)
 	return i, err
 }
+
+const deleteGithubInstallationState = `-- name: DeleteGithubInstallationState :exec
+DELETE FROM github_installation_states
+WHERE id = $1
+`
+
+func (q *Queries) DeleteGithubInstallationState(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteGithubInstallationState, id)
+	return err
+}
+
+const getStateByStateId = `-- name: GetStateByStateId :one
+SELECT id, user_id, created_at, expires_at FROM github_installation_states
+WHERE id = $1
+`
+
+func (q *Queries) GetStateByStateId(ctx context.Context, id string) (GithubInstallationState, error) {
+	row := q.db.QueryRow(ctx, getStateByStateId, id)
+	var i GithubInstallationState
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const upsertGithubInstallation = `-- name: UpsertGithubInstallation :one
+INSERT INTO github_installations (
+    id,
+    user_id,
+    account_id,
+    account_login,
+    account_type,
+    repository_selection
+)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (id) DO UPDATE SET
+    user_id = EXCLUDED.user_id,
+    account_id = EXCLUDED.account_id,
+    account_login = EXCLUDED.account_login,
+    account_type = EXCLUDED.account_type,
+    repository_selection = EXCLUDED.repository_selection,
+    updated_at = now()
+RETURNING id, user_id, account_id, account_login, account_type, repository_selection, created_at, updated_at
+`
+
+type UpsertGithubInstallationParams struct {
+	ID                  int64
+	UserID              pgtype.UUID
+	AccountID           int64
+	AccountLogin        string
+	AccountType         string
+	RepositorySelection string
+}
+
+func (q *Queries) UpsertGithubInstallation(ctx context.Context, arg UpsertGithubInstallationParams) (GithubInstallation, error) {
+	row := q.db.QueryRow(ctx, upsertGithubInstallation,
+		arg.ID,
+		arg.UserID,
+		arg.AccountID,
+		arg.AccountLogin,
+		arg.AccountType,
+		arg.RepositorySelection,
+	)
+	var i GithubInstallation
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountID,
+		&i.AccountLogin,
+		&i.AccountType,
+		&i.RepositorySelection,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
