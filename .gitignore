@@ -2,3 +2,4 @@
 *.pem
 deploy/data*
 dist/
+stuff/

@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/SudiMango/podlet/internal/cli/browser"
 	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
 	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
@@ -65,7 +65,7 @@ func login(cmd *cobra.Command) (string, error) {
 	}
 
 	// Attempt to open browser
-	if err := browser.Open(authorization.VerificationURI); err != nil {
+	if err := util.OpenBrowser(authorization.VerificationURI); err != nil {
 		fmt.Fprintf(out, "Failed opening a web browser at %s\n", authorization.VerificationURI)
 		fmt.Fprintf(out, "Open %s in your browser and enter code %s\n", authorization.VerificationURI, authorization.UserCode)
 	}

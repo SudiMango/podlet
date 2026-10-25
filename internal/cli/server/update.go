@@ -6,6 +6,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
 	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
@@ -78,6 +79,8 @@ func updateRegisteredServer(cmd *cobra.Command, serverId string, request contrac
 	fmt.Fprintln(w, "Server updated successfully!")
 	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
 	fmt.Fprintf(w, "Name:\t%s\n", response.Name)
+	fmt.Fprintf(w, "Lifecycle State:\t%s\n", response.LifecycleState)
+	fmt.Fprintf(w, "Last Seen At:\t%s\n", util.FormatLastSeenAt(response.LastSeenAt))
 	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
 	fmt.Fprintf(w, "Updated At:\t%s\n", response.UpdatedAt.Local().Format("2006-01-02 15:04"))
 
