@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/SudiMango/podlet/internal/api/dto"
+	"github.com/SudiMango/podlet/internal/api/util"
 	"github.com/SudiMango/podlet/internal/contract"
 	db "github.com/SudiMango/podlet/internal/sql/database"
 	"github.com/jackc/pgx/v5"
@@ -206,7 +207,7 @@ func (r *ServerRepository) GetServersByUserId(ctx context.Context, userId string
 			UserId:         s.UserID.String(),
 			CreatedAt:      s.CreatedAt.Time,
 			UpdatedAt:      s.UpdatedAt.Time,
-			LastSeenAt:     &s.LastSeenAt.Time,
+			LastSeenAt:     util.TimestamptzToTimePtr(s.LastSeenAt),
 			Token:          nil,
 			LifecycleState: dto.ServerLifecycleState(s.LifecycleState),
 		}
@@ -237,7 +238,7 @@ func (r *ServerRepository) GetServerByUserIdAndServerId(ctx context.Context, use
 		UserId:         done.UserID.String(),
 		CreatedAt:      done.CreatedAt.Time,
 		UpdatedAt:      done.UpdatedAt.Time,
-		LastSeenAt:     &done.LastSeenAt.Time,
+		LastSeenAt:     util.TimestamptzToTimePtr(done.LastSeenAt),
 		Token:          nil,
 		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
 	}, nil
@@ -255,7 +256,7 @@ func (r *ServerRepository) GetServerByTokenHash(ctx context.Context, tokenHash s
 		UserId:         done.UserID.String(),
 		CreatedAt:      done.CreatedAt.Time,
 		UpdatedAt:      done.UpdatedAt.Time,
-		LastSeenAt:     &done.LastSeenAt.Time,
+		LastSeenAt:     util.TimestamptzToTimePtr(done.LastSeenAt),
 		Token:          nil,
 		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
 	}, nil
@@ -310,7 +311,7 @@ func (r *ServerRepository) UpdateServerByUserIdAndServerId(ctx context.Context, 
 		UserId:         done.UserID.String(),
 		CreatedAt:      done.CreatedAt.Time,
 		UpdatedAt:      done.UpdatedAt.Time,
-		LastSeenAt:     &done.LastSeenAt.Time,
+		LastSeenAt:     util.TimestamptzToTimePtr(done.LastSeenAt),
 		Token:          nil,
 		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
 	}, nil

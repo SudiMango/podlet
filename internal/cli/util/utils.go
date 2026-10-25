@@ -1,11 +1,20 @@
-package browser
+package util
 
 import (
 	"os/exec"
 	"runtime"
+	"time"
 )
 
-func Open(url string) error {
+func FormatLastSeenAt(lastSeenAt *time.Time) string {
+	if lastSeenAt == nil {
+		return "Never"
+	}
+
+	return lastSeenAt.Local().Format("2006-01-02 15:04")
+}
+
+func OpenBrowser(url string) error {
 	var command *exec.Cmd
 
 	switch runtime.GOOS {
