@@ -30,6 +30,7 @@ type RouterParams struct {
 	HealthHandler    *handler.HealthHandler
 	ProfileHandler   *handler.ProfileHandler
 	ServerHandler    *handler.ServerHandler
+	GithubHandler    *handler.GithubHandler
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
@@ -47,6 +48,11 @@ func provideRouter(params RouterParams) *chi.Mux {
 		r.Use(auth.RequireAuth(params.Auth))
 
 		r.Get("/profile", params.ProfileHandler.GetPodletProfileByUserId)
+
+		r.Route("/github", func(r chi.Router) {
+			r.Post("/installations/start", params.GithubHandler.StartInstallation)
+			r.Post("/installations/setup", nil)
+		})
 
 		r.Route("/servers", func(r chi.Router) {
 			r.Post("/add", params.ServerHandler.CreatePendingServerByUserId)
