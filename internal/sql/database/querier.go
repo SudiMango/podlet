@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	CreateInstallationStateByUserId(ctx context.Context, arg CreateInstallationStateByUserIdParams) (GithubInstallationState, error)
+	CreatePendingJobForServer(ctx context.Context, arg CreatePendingJobForServerParams) (ServerAgentJob, error)
 	CreatePendingServerByUserId(ctx context.Context, arg CreatePendingServerByUserIdParams) (PendingServer, error)
 	CreateServerByUserId(ctx context.Context, arg CreateServerByUserIdParams) (Server, error)
 	DeleteGithubInstallationState(ctx context.Context, id string) error

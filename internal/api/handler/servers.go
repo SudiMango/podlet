@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/SudiMango/podlet/internal/api/auth"
-	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/api/service"
 	"github.com/SudiMango/podlet/internal/api/util"
 	"github.com/SudiMango/podlet/internal/contract"
@@ -327,7 +326,7 @@ func (h *ServerHandler) UpdateServerLastSeenAtByUserIdAndServerId(w http.Respons
 		util.SendError(w, http.StatusInternalServerError, err)
 		return
 	}
-	if lifecycleState != nil && *lifecycleState == dto.ServerLifecyclePendingDeletion {
+	if lifecycleState != nil && *lifecycleState == contract.ServerLifecyclePendingDeletion {
 		util.SendJSON(w, http.StatusOK, contract.HeartbeatResponse{
 			Action: new(contract.ActionUninstall),
 		})

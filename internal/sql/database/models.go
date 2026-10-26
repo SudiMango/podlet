@@ -11,6 +11,91 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ServerJobStatus string
+
+const (
+	ServerJobStatusPending ServerJobStatus = "pending"
+	ServerJobStatusOngoing ServerJobStatus = "ongoing"
+	ServerJobStatusSuccess ServerJobStatus = "success"
+	ServerJobStatusFailed  ServerJobStatus = "failed"
+)
+
+func (e *ServerJobStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ServerJobStatus(s)
+	case string:
+		*e = ServerJobStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ServerJobStatus: %T", src)
+	}
+	return nil
+}
+
+type NullServerJobStatus struct {
+	ServerJobStatus ServerJobStatus
+	Valid           bool // Valid is true if ServerJobStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullServerJobStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ServerJobStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ServerJobStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullServerJobStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ServerJobStatus), nil
+}
+
+type ServerJobType string
+
+const (
+	ServerJobTypeCloneRepository ServerJobType = "clone_repository"
+)
+
+func (e *ServerJobType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ServerJobType(s)
+	case string:
+		*e = ServerJobType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ServerJobType: %T", src)
+	}
+	return nil
+}
+
+type NullServerJobType struct {
+	ServerJobType ServerJobType
+	Valid         bool // Valid is true if ServerJobType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullServerJobType) Scan(value interface{}) error {
+	if value == nil {
+		ns.ServerJobType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ServerJobType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullServerJobType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ServerJobType), nil
+}
+
 type ServerLifecycleState string
 
 const (
@@ -102,6 +187,19 @@ type Server struct {
 	UpdatedAt      pgtype.Timestamptz
 	LastSeenAt     pgtype.Timestamptz
 	LifecycleState ServerLifecycleState
+}
+
+type ServerAgentJob struct {
+	ID             string
+	UserID         pgtype.UUID
+	ServerID       pgtype.Text
+	JobStatus      ServerJobStatus
+	JobType        ServerJobType
+	RepoName       string
+	RepositoryID   int64
+	InstallationID int64
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
 }
 
 type Session struct {

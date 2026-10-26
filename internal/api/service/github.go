@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/SudiMango/podlet/internal/api/dto"
@@ -168,6 +169,26 @@ func (s *GithubService) GetGithubRepositoriesByUserId(ctx context.Context, userI
 	}
 
 	return response, nil
+}
+
+func (s *GithubService) GetGithubRepositoryByFullName(ctx context.Context, userId string, fullName string) (*contract.GithubRepositoryResponse, error) {
+	owner, name, found := strings.Cut(fullName, "/")
+	if !found || owner == "" || name == "" || strings.Contains(name, "/") {
+		return nil, ErrInvalidRepoName
+	}
+
+	repositories, err := s.GetGithubRepositoriesByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, repository := range repositories {
+		if strings.EqualFold(repository.FullName, fullName) {
+			return &repository, nil
+		}
+	}
+
+	return nil, ErrInvalidRepoName
 }
 
 func (s *GithubService) DeleteGithubInstallationStateByStateId(ctx context.Context, stateId string) error {

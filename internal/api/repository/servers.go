@@ -183,7 +183,7 @@ func (r *ServerRepository) CreateServerByUserId(ctx context.Context, userId stri
 		UpdatedAt:      done.UpdatedAt.Time,
 		LastSeenAt:     nil,
 		Token:          nil,
-		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
+		LifecycleState: contract.ServerLifecycleState(done.LifecycleState),
 	}, nil
 }
 
@@ -209,7 +209,7 @@ func (r *ServerRepository) GetServersByUserId(ctx context.Context, userId string
 			UpdatedAt:      s.UpdatedAt.Time,
 			LastSeenAt:     util.TimestamptzToTimePtr(s.LastSeenAt),
 			Token:          nil,
-			LifecycleState: dto.ServerLifecycleState(s.LifecycleState),
+			LifecycleState: contract.ServerLifecycleState(s.LifecycleState),
 		}
 		response = append(response, sTemp)
 	}
@@ -240,7 +240,7 @@ func (r *ServerRepository) GetServerByUserIdAndServerId(ctx context.Context, use
 		UpdatedAt:      done.UpdatedAt.Time,
 		LastSeenAt:     util.TimestamptzToTimePtr(done.LastSeenAt),
 		Token:          nil,
-		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
+		LifecycleState: contract.ServerLifecycleState(done.LifecycleState),
 	}, nil
 }
 
@@ -258,11 +258,11 @@ func (r *ServerRepository) GetServerByTokenHash(ctx context.Context, tokenHash s
 		UpdatedAt:      done.UpdatedAt.Time,
 		LastSeenAt:     util.TimestamptzToTimePtr(done.LastSeenAt),
 		Token:          nil,
-		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
+		LifecycleState: contract.ServerLifecycleState(done.LifecycleState),
 	}, nil
 }
 
-func (r *ServerRepository) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*dto.ServerLifecycleState, error) {
+func (r *ServerRepository) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*contract.ServerLifecycleState, error) {
 	var pgUserId pgtype.UUID
 
 	if err := pgUserId.Scan(userId); err != nil {
@@ -282,7 +282,7 @@ func (r *ServerRepository) UpdateServerLastSeenAtByUserIdAndServerId(ctx context
 	}
 
 	if lifecycleState != "active" {
-		state := dto.ServerLifecycleState(lifecycleState)
+		state := contract.ServerLifecycleState(lifecycleState)
 		return &state, nil
 	}
 
@@ -313,7 +313,7 @@ func (r *ServerRepository) UpdateServerByUserIdAndServerId(ctx context.Context, 
 		UpdatedAt:      done.UpdatedAt.Time,
 		LastSeenAt:     util.TimestamptzToTimePtr(done.LastSeenAt),
 		Token:          nil,
-		LifecycleState: dto.ServerLifecycleState(done.LifecycleState),
+		LifecycleState: contract.ServerLifecycleState(done.LifecycleState),
 	}, nil
 }
 
@@ -348,7 +348,7 @@ func (r *ServerRepository) MarkServerForDeletionByUserIdAndServerId(ctx context.
 	rowsDeleted, err := r.store.MarkServerForDeletionByUserIdAndServerId(ctx, db.MarkServerForDeletionByUserIdAndServerIdParams{
 		UserID:         pgUserId,
 		ID:             serverId,
-		LifecycleState: db.ServerLifecycleState(dto.ServerLifecyclePendingDeletion),
+		LifecycleState: db.ServerLifecycleState(contract.ServerLifecyclePendingDeletion),
 	})
 	if err != nil {
 		return err

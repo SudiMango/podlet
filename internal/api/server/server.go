@@ -63,6 +63,8 @@ func provideRouter(params RouterParams) *chi.Mux {
 			r.Get("/{serverId}", params.ServerHandler.GetServerByUserIdAndServerId)
 			r.Patch("/{serverId}", params.ServerHandler.UpdateServerByUserIdAndServerId)
 			r.Delete("/{serverId}", params.ServerHandler.MarkServerForDeletionByUserIdAndServerId)
+
+			r.Post("/deploy", nil)
 		})
 	})
 
@@ -73,6 +75,8 @@ func provideRouter(params RouterParams) *chi.Mux {
 		r.Route("/agent", func(r chi.Router) {
 			r.Post("/heartbeat", params.ServerHandler.UpdateServerLastSeenAtByUserIdAndServerId)
 			r.Delete("/", params.ServerHandler.DeleteServerByUserIdAndServerId)
+			r.Get("/jobs/claim", nil)
+			r.Post("/jobs/report", nil)
 		})
 	})
 
