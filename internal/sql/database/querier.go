@@ -19,6 +19,7 @@ type Querier interface {
 	DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) (int64, error)
 	DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) (int64, error)
 	GetGithubInstallationsByUserId(ctx context.Context, userID pgtype.UUID) ([]GithubInstallation, error)
+	GetOldestJobByServerId(ctx context.Context, serverID pgtype.Text) (ServerAgentJob, error)
 	GetPodletProfileByUserId(ctx context.Context, id pgtype.UUID) (GetPodletProfileByUserIdRow, error)
 	GetServerByTokenHash(ctx context.Context, tokenHash string) (Server, error)
 	GetServerByUserIdAndServerId(ctx context.Context, arg GetServerByUserIdAndServerIdParams) (Server, error)

@@ -66,3 +66,24 @@ func (h *JobHandler) CreatePendingJobForServer(w http.ResponseWriter, r *http.Re
 
 	util.SendJSON(w, http.StatusOK, result)
 }
+
+func (h *JobHandler) ClaimJob(w http.ResponseWriter, r *http.Request) {
+	agentIdentity, ok := auth.AgentIdentityFromContext(r.Context())
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Invalid agent identity"))
+		return
+	}
+
+	result, err := h.jobService.ClaimJob(r.Context(), agentIdentity.ServerID)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNoJobsAvailable):
+			util.SendJSON(w, http.StatusNoContent, nil)
+		default:
+			util.SendError(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	util.SendJSON(w, http.StatusOK, result)
+}

@@ -47,3 +47,26 @@ func (r *JobRepository) CreatePendingJobForServer(ctx context.Context, userId st
 		Status: contract.JobStatus(result.JobStatus),
 	}, nil
 }
+
+func (r *JobRepository) GetOldestJobByServerId(ctx context.Context, serverId string) (*contract.JobResponse, error) {
+	result, err := r.store.GetOldestJobByServerId(ctx, pgtype.Text{
+		String: serverId,
+		Valid:  true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract.JobResponse{
+		ID:             result.ID,
+		UserID:         result.UserID.String(),
+		ServerID:       result.ServerID.String,
+		JobStatus:      contract.JobStatus(result.JobStatus),
+		JobType:        contract.JobType(result.JobType),
+		RepoName:       result.RepoName,
+		RepositoryID:   result.RepositoryID,
+		InstallationID: result.InstallationID,
+		CreatedAt:      result.CreatedAt.Time,
+		UpdatedAt:      result.UpdatedAt.Time,
+	}, err
+}

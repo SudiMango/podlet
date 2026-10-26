@@ -31,6 +31,7 @@ type RouterParams struct {
 	ProfileHandler   *handler.ProfileHandler
 	ServerHandler    *handler.ServerHandler
 	GithubHandler    *handler.GithubHandler
+	JobHandler       *handler.JobHandler
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
@@ -64,7 +65,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 			r.Patch("/{serverId}", params.ServerHandler.UpdateServerByUserIdAndServerId)
 			r.Delete("/{serverId}", params.ServerHandler.MarkServerForDeletionByUserIdAndServerId)
 
-			r.Post("/deploy", nil)
+			r.Post("/deploy", params.JobHandler.CreatePendingJobForServer)
 		})
 	})
 
@@ -75,7 +76,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 		r.Route("/agent", func(r chi.Router) {
 			r.Post("/heartbeat", params.ServerHandler.UpdateServerLastSeenAtByUserIdAndServerId)
 			r.Delete("/", params.ServerHandler.DeleteServerByUserIdAndServerId)
-			r.Get("/jobs/claim", nil)
+			r.Get("/jobs/claim", params.JobHandler.ClaimJob)
 			r.Post("/jobs/report", nil)
 		})
 	})

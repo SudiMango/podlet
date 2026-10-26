@@ -60,3 +60,31 @@ func (q *Queries) CreatePendingJobForServer(ctx context.Context, arg CreatePendi
 	)
 	return i, err
 }
+
+const getOldestJobByServerId = `-- name: GetOldestJobByServerId :one
+SELECT id, user_id, server_id, job_status, job_type, repo_name, repository_id, installation_id, created_at, updated_at
+FROM server_agent_jobs
+WHERE
+    server_id = $1
+    AND job_status = 'pending'
+ORDER BY created_at ASC
+LIMIT 1
+`
+
+func (q *Queries) GetOldestJobByServerId(ctx context.Context, serverID pgtype.Text) (ServerAgentJob, error) {
+	row := q.db.QueryRow(ctx, getOldestJobByServerId, serverID)
+	var i ServerAgentJob
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ServerID,
+		&i.JobStatus,
+		&i.JobType,
+		&i.RepoName,
+		&i.RepositoryID,
+		&i.InstallationID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

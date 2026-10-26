@@ -14,7 +14,7 @@ CREATE TYPE server_job_type AS ENUM (
 CREATE TABLE server_agent_jobs (
     id VARCHAR(64) PRIMARY KEY NOT NULL,
     user_id UUID NOT NULL REFERENCES users (id),
-    server_id VARCHAR(64) REFERENCES servers (id),
+    server_id VARCHAR(64) NOT NULL REFERENCES servers (id),
     job_status server_job_status NOT NULL DEFAULT 'pending',
     job_type server_job_type NOT NULL,
     repo_name TEXT NOT NULL,

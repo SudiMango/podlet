@@ -106,6 +106,15 @@ func (s *GithubService) VerifyInstallation(ctx context.Context, stateID string, 
 	return saved, nil
 }
 
+func (s *GithubService) CreateRepositoryAccessToken(ctx context.Context, installationId int64, repositoryId int64) (string, error) {
+	token, err := s.githubClient.CreateInstallationToken(ctx, installationId, []int64{repositoryId})
+	if err != nil {
+		return "", err
+	}
+
+	return token.Token, nil
+}
+
 func (s *GithubService) GetStateByStateId(ctx context.Context, stateId string) (*dto.GithubInstallationState, error) {
 	result, err := s.githubRepository.GetStateByStateId(ctx, util.HashToken(stateId))
 	if err != nil {

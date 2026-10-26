@@ -18,6 +18,7 @@ const (
 var (
 	ErrInvalidServerId = errors.New("Server with given id doesn't exist.")
 	ErrInvalidRepoName = errors.New("Repository with given name doesn't exist. Please use the format `UserName/RepoName`.")
+	ErrNoJobsAvailable = errors.New("No job available.")
 )
 
 type JobService struct {
@@ -70,4 +71,26 @@ func (s *JobService) CreatePendingJobForServer(ctx context.Context, userId strin
 	}
 
 	return result, nil
+}
+
+func (s *JobService) ClaimJob(ctx context.Context, serverId string) (*contract.ClaimJobResponse, error) {
+	job, err := s.jobRepository.GetOldestJobByServerId(ctx, serverId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoJobsAvailable
+		}
+		return nil, err
+	}
+
+	githubToken, err := s.githubService.CreateRepositoryAccessToken(ctx, job.InstallationID, job.RepositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract.ClaimJobResponse{
+		JobId:       job.ID,
+		JobType:     job.JobType,
+		CloneUrl:    "https://github.com/" + job.RepoName + ".git",
+		GithubToken: githubToken,
+	}, nil
 }
