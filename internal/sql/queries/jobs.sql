@@ -23,15 +23,15 @@ LIMIT 1;
 -- name: ReportJobByServerIdAndJobId :execrows
 UPDATE server_agent_jobs
 SET
-    job_status = $3,
+    job_status = sqlc.arg(job_status)::server_job_status,
     error_message = CASE
-        WHEN $3 = 'failed' THEN $4
-        ELSE NULL
+        WHEN sqlc.arg(job_status)::server_job_status = 'failed' THEN sqlc.narg(error_message)
+        ELSE NULL::TEXT
     END,
     updated_at = now()
-WHERE id = $1
-  AND server_id = $2
+WHERE id = sqlc.arg(id)
+  AND server_id = sqlc.arg(server_id)
   AND (
-    (job_status = 'pending' AND $3 = 'ongoing')
-    OR (job_status = 'ongoing' AND $3 IN ('success', 'failed'))
+    (job_status = 'pending' AND sqlc.arg(job_status)::server_job_status = 'ongoing')
+    OR (job_status = 'ongoing' AND sqlc.arg(job_status)::server_job_status IN ('success', 'failed'))
   );

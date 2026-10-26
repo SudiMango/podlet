@@ -94,33 +94,33 @@ func (q *Queries) GetOldestJobByServerId(ctx context.Context, serverID string) (
 const reportJobByServerIdAndJobId = `-- name: ReportJobByServerIdAndJobId :execrows
 UPDATE server_agent_jobs
 SET
-    job_status = $3,
+    job_status = $1::server_job_status,
     error_message = CASE
-        WHEN $3 = 'failed' THEN $4
-        ELSE NULL
+        WHEN $1::server_job_status = 'failed' THEN $2
+        ELSE NULL::TEXT
     END,
     updated_at = now()
-WHERE id = $1
-  AND server_id = $2
+WHERE id = $3
+  AND server_id = $4
   AND (
-    (job_status = 'pending' AND $3 = 'ongoing')
-    OR (job_status = 'ongoing' AND $3 IN ('success', 'failed'))
+    (job_status = 'pending' AND $1::server_job_status = 'ongoing')
+    OR (job_status = 'ongoing' AND $1::server_job_status IN ('success', 'failed'))
   )
 `
 
 type ReportJobByServerIdAndJobIdParams struct {
-	ID           string
-	ServerID     string
 	JobStatus    ServerJobStatus
 	ErrorMessage pgtype.Text
+	ID           string
+	ServerID     string
 }
 
 func (q *Queries) ReportJobByServerIdAndJobId(ctx context.Context, arg ReportJobByServerIdAndJobIdParams) (int64, error) {
 	result, err := q.db.Exec(ctx, reportJobByServerIdAndJobId,
-		arg.ID,
-		arg.ServerID,
 		arg.JobStatus,
 		arg.ErrorMessage,
+		arg.ID,
+		arg.ServerID,
 	)
 	if err != nil {
 		return 0, err
