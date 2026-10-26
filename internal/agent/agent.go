@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/SudiMango/podlet/internal/agent/config"
@@ -16,7 +17,7 @@ const (
 type Agent struct {
 	config *config.Config
 	client *Client
-	busy   bool
+	busy   atomic.Bool
 }
 
 func New() (*Agent, error) {
@@ -28,7 +29,6 @@ func New() (*Agent, error) {
 	return &Agent{
 		config: agentConfig,
 		client: NewClient(agentConfig.APIURL, agentConfig.Token),
-		busy:   false,
 	}, nil
 }
 
@@ -42,13 +42,10 @@ func (a *Agent) Run(ctx context.Context) error {
 	}
 
 	// Attempt to claim job
-	if !a.busy {
-		claimed, err := a.claimJob(ctx)
+	if !a.busy.Load() {
+		_, err := a.claimJob(ctx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
-		}
-		if claimed != "" {
-			a.reportJobClaimed(ctx, claimed)
 		}
 	}
 
@@ -72,13 +69,10 @@ func (a *Agent) Run(ctx context.Context) error {
 			}
 
 			// Attempt to claim job
-			if !a.busy {
-				claimed, err := a.claimJob(ctx)
+			if !a.busy.Load() {
+				_, err := a.claimJob(ctx)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%v\n", err)
-				}
-				if claimed != "" {
-					a.reportJobClaimed(ctx, claimed)
 				}
 			}
 		}
