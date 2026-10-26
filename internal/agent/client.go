@@ -1,4 +1,4 @@
-package client
+package agent
 
 import (
 	"bytes"
@@ -17,7 +17,7 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func New(baseURL string, token string) *Client {
+func NewClient(baseURL string, token string) *Client {
 	return &Client{
 		baseURL: strings.TrimRight(baseURL, "/"),
 		token:   token,

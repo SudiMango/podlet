@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/SudiMango/podlet/internal/api/dto"
@@ -105,6 +106,15 @@ func (s *GithubService) VerifyInstallation(ctx context.Context, stateID string, 
 	return saved, nil
 }
 
+func (s *GithubService) CreateRepositoryAccessToken(ctx context.Context, installationId int64, repositoryId int64) (string, error) {
+	token, err := s.githubClient.CreateInstallationToken(ctx, installationId, []int64{repositoryId})
+	if err != nil {
+		return "", err
+	}
+
+	return token.Token, nil
+}
+
 func (s *GithubService) GetStateByStateId(ctx context.Context, stateId string) (*dto.GithubInstallationState, error) {
 	result, err := s.githubRepository.GetStateByStateId(ctx, util.HashToken(stateId))
 	if err != nil {
@@ -168,6 +178,26 @@ func (s *GithubService) GetGithubRepositoriesByUserId(ctx context.Context, userI
 	}
 
 	return response, nil
+}
+
+func (s *GithubService) GetGithubRepositoryByFullName(ctx context.Context, userId string, fullName string) (*contract.GithubRepositoryResponse, error) {
+	owner, name, found := strings.Cut(fullName, "/")
+	if !found || owner == "" || name == "" || strings.Contains(name, "/") {
+		return nil, ErrInvalidRepoName
+	}
+
+	repositories, err := s.GetGithubRepositoriesByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, repository := range repositories {
+		if strings.EqualFold(repository.FullName, fullName) {
+			return &repository, nil
+		}
+	}
+
+	return nil, ErrInvalidRepoName
 }
 
 func (s *GithubService) DeleteGithubInstallationStateByStateId(ctx context.Context, stateId string) error {

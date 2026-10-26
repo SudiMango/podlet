@@ -12,12 +12,17 @@ import (
 
 type Querier interface {
 	CreateInstallationStateByUserId(ctx context.Context, arg CreateInstallationStateByUserIdParams) (GithubInstallationState, error)
+	CreatePendingJobForServer(ctx context.Context, arg CreatePendingJobForServerParams) (ServerAgentJob, error)
 	CreatePendingServerByUserId(ctx context.Context, arg CreatePendingServerByUserIdParams) (PendingServer, error)
 	CreateServerByUserId(ctx context.Context, arg CreateServerByUserIdParams) (Server, error)
 	DeleteGithubInstallationState(ctx context.Context, id string) error
 	DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) (int64, error)
 	DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) (int64, error)
+	GetAllJobsByServerIdAndUserId(ctx context.Context, arg GetAllJobsByServerIdAndUserIdParams) ([]ServerAgentJob, error)
+	GetAllJobsByUserId(ctx context.Context, userID pgtype.UUID) ([]ServerAgentJob, error)
 	GetGithubInstallationsByUserId(ctx context.Context, userID pgtype.UUID) ([]GithubInstallation, error)
+	GetJobByJobIdAndUserId(ctx context.Context, arg GetJobByJobIdAndUserIdParams) (ServerAgentJob, error)
+	GetOldestJobByServerId(ctx context.Context, serverID string) (ServerAgentJob, error)
 	GetPodletProfileByUserId(ctx context.Context, id pgtype.UUID) (GetPodletProfileByUserIdRow, error)
 	GetServerByTokenHash(ctx context.Context, tokenHash string) (Server, error)
 	GetServerByUserIdAndServerId(ctx context.Context, arg GetServerByUserIdAndServerIdParams) (Server, error)
@@ -28,6 +33,7 @@ type Querier interface {
 	GetValidPendingServersByUserId(ctx context.Context, userID pgtype.UUID) ([]PendingServer, error)
 	MarkServerForDeletionByUserIdAndServerId(ctx context.Context, arg MarkServerForDeletionByUserIdAndServerIdParams) (int64, error)
 	PingDatabase(ctx context.Context) (int32, error)
+	ReportJobByServerIdAndJobId(ctx context.Context, arg ReportJobByServerIdAndJobIdParams) (int64, error)
 	UpdateServerByUserIdAndServerId(ctx context.Context, arg UpdateServerByUserIdAndServerIdParams) (Server, error)
 	UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, arg UpdateServerLastSeenAtByUserIdAndServerIdParams) (ServerLifecycleState, error)
 	UpsertGithubInstallation(ctx context.Context, arg UpsertGithubInstallationParams) (GithubInstallation, error)

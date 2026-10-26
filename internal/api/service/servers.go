@@ -117,7 +117,7 @@ func (s *ServerService) GetServerByUserIdAndServerId(ctx context.Context, userId
 	return s.serverRepository.GetServerByUserIdAndServerId(ctx, userId, serverId)
 }
 
-func (s *ServerService) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*dto.ServerLifecycleState, error) {
+func (s *ServerService) UpdateServerLastSeenAtByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*contract.ServerLifecycleState, error) {
 	lifecycleState, err := s.serverRepository.UpdateServerLastSeenAtByUserIdAndServerId(ctx, userId, serverId)
 	if err != nil {
 		return nil, err
