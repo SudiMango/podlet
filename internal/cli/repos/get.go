@@ -15,7 +15,7 @@ type ListCommand struct{}
 
 func (ListCommand) Command() *cobra.Command {
 	return &cobra.Command{
-		Use:   "list",
+		Use:   "get",
 		Short: "List which Github repositories Podlet can read",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
