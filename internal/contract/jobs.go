@@ -20,14 +20,14 @@ type ClaimJobResponse struct {
 }
 
 type JobResponse struct {
-	ID             string    `json:"id"`
-	UserID         string    `json:"user_id"`
-	ServerID       string    `json:"server_id"`
+	Id             string    `json:"id"`
+	UserId         string    `json:"user_id"`
+	ServerId       string    `json:"server_id"`
 	JobStatus      JobStatus `json:"job_status"`
 	JobType        JobType   `json:"job_type"`
 	RepoName       string    `json:"repo_name"`
-	RepositoryID   int64     `json:"repository_id"`
-	InstallationID int64     `json:"installation_id"`
+	RepositoryId   int64     `json:"repository_id"`
+	InstallationId int64     `json:"installation_id"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }

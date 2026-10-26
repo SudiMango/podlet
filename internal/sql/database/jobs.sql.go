@@ -22,13 +22,13 @@ INSERT INTO server_agent_jobs (
     installation_id
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, user_id, server_id, job_status, job_type, repo_name, repository_id, installation_id, created_at, updated_at
+RETURNING id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
 `
 
 type CreatePendingJobForServerParams struct {
 	ID             string
 	UserID         pgtype.UUID
-	ServerID       pgtype.Text
+	ServerID       string
 	JobType        ServerJobType
 	RepoName       string
 	RepositoryID   int64
@@ -52,6 +52,7 @@ func (q *Queries) CreatePendingJobForServer(ctx context.Context, arg CreatePendi
 		&i.ServerID,
 		&i.JobStatus,
 		&i.JobType,
+		&i.ErrorMessage,
 		&i.RepoName,
 		&i.RepositoryID,
 		&i.InstallationID,
@@ -62,7 +63,7 @@ func (q *Queries) CreatePendingJobForServer(ctx context.Context, arg CreatePendi
 }
 
 const getOldestJobByServerId = `-- name: GetOldestJobByServerId :one
-SELECT id, user_id, server_id, job_status, job_type, repo_name, repository_id, installation_id, created_at, updated_at
+SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
 FROM server_agent_jobs
 WHERE
     server_id = $1
@@ -71,7 +72,7 @@ ORDER BY created_at ASC
 LIMIT 1
 `
 
-func (q *Queries) GetOldestJobByServerId(ctx context.Context, serverID pgtype.Text) (ServerAgentJob, error) {
+func (q *Queries) GetOldestJobByServerId(ctx context.Context, serverID string) (ServerAgentJob, error) {
 	row := q.db.QueryRow(ctx, getOldestJobByServerId, serverID)
 	var i ServerAgentJob
 	err := row.Scan(
@@ -80,6 +81,7 @@ func (q *Queries) GetOldestJobByServerId(ctx context.Context, serverID pgtype.Te
 		&i.ServerID,
 		&i.JobStatus,
 		&i.JobType,
+		&i.ErrorMessage,
 		&i.RepoName,
 		&i.RepositoryID,
 		&i.InstallationID,
@@ -87,4 +89,41 @@ func (q *Queries) GetOldestJobByServerId(ctx context.Context, serverID pgtype.Te
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const reportJobByServerIdAndJobId = `-- name: ReportJobByServerIdAndJobId :execrows
+UPDATE server_agent_jobs
+SET
+    job_status = $3,
+    error_message = CASE
+        WHEN $3 = 'failed' THEN $4
+        ELSE NULL
+    END,
+    updated_at = now()
+WHERE id = $1
+  AND server_id = $2
+  AND (
+    (job_status = 'pending' AND $3 = 'ongoing')
+    OR (job_status = 'ongoing' AND $3 IN ('success', 'failed'))
+  )
+`
+
+type ReportJobByServerIdAndJobIdParams struct {
+	ID           string
+	ServerID     string
+	JobStatus    ServerJobStatus
+	ErrorMessage pgtype.Text
+}
+
+func (q *Queries) ReportJobByServerIdAndJobId(ctx context.Context, arg ReportJobByServerIdAndJobIdParams) (int64, error) {
+	result, err := q.db.Exec(ctx, reportJobByServerIdAndJobId,
+		arg.ID,
+		arg.ServerID,
+		arg.JobStatus,
+		arg.ErrorMessage,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

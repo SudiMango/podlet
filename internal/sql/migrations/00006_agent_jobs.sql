@@ -17,6 +17,7 @@ CREATE TABLE server_agent_jobs (
     server_id VARCHAR(64) NOT NULL REFERENCES servers (id),
     job_status server_job_status NOT NULL DEFAULT 'pending',
     job_type server_job_type NOT NULL,
+    error_message TEXT,
     repo_name TEXT NOT NULL,
     repository_id BIGINT NOT NULL,
     installation_id BIGINT NOT NULL,

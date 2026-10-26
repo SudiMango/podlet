@@ -6,6 +6,7 @@ import (
 	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/contract"
 	db "github.com/SudiMango/podlet/internal/sql/database"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -27,12 +28,9 @@ func (r *JobRepository) CreatePendingJobForServer(ctx context.Context, userId st
 	}
 
 	result, err := r.store.CreatePendingJobForServer(ctx, db.CreatePendingJobForServerParams{
-		ID:     request.JobId,
-		UserID: pgUserId,
-		ServerID: pgtype.Text{
-			String: request.ServerId,
-			Valid:  true,
-		},
+		ID:             request.JobId,
+		UserID:         pgUserId,
+		ServerID:       request.ServerId,
 		JobType:        db.ServerJobType(request.JobType),
 		RepoName:       request.RepoName,
 		RepositoryID:   request.RepositoryId,
@@ -49,24 +47,41 @@ func (r *JobRepository) CreatePendingJobForServer(ctx context.Context, userId st
 }
 
 func (r *JobRepository) GetOldestJobByServerId(ctx context.Context, serverId string) (*contract.JobResponse, error) {
-	result, err := r.store.GetOldestJobByServerId(ctx, pgtype.Text{
-		String: serverId,
-		Valid:  true,
-	})
+	result, err := r.store.GetOldestJobByServerId(ctx, serverId)
 	if err != nil {
 		return nil, err
 	}
 
 	return &contract.JobResponse{
-		ID:             result.ID,
-		UserID:         result.UserID.String(),
-		ServerID:       result.ServerID.String,
+		Id:             result.ID,
+		UserId:         result.UserID.String(),
+		ServerId:       result.ServerID,
 		JobStatus:      contract.JobStatus(result.JobStatus),
 		JobType:        contract.JobType(result.JobType),
 		RepoName:       result.RepoName,
-		RepositoryID:   result.RepositoryID,
-		InstallationID: result.InstallationID,
+		RepositoryId:   result.RepositoryID,
+		InstallationId: result.InstallationID,
 		CreatedAt:      result.CreatedAt.Time,
 		UpdatedAt:      result.UpdatedAt.Time,
 	}, err
+}
+
+func (r *JobRepository) ReportJobByServerIdAndJobId(ctx context.Context, serverId string, request contract.ReportJobRequest) error {
+	rowsAffected, err := r.store.ReportJobByServerIdAndJobId(ctx, db.ReportJobByServerIdAndJobIdParams{
+		ID:        request.JobId,
+		ServerID:  serverId,
+		JobStatus: db.ServerJobStatus(request.JobStatus),
+		ErrorMessage: pgtype.Text{
+			String: request.Error,
+			Valid:  true,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }

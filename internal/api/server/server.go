@@ -77,7 +77,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 			r.Post("/heartbeat", params.ServerHandler.UpdateServerLastSeenAtByUserIdAndServerId)
 			r.Delete("/", params.ServerHandler.DeleteServerByUserIdAndServerId)
 			r.Get("/jobs/claim", params.JobHandler.ClaimJob)
-			r.Post("/jobs/report", nil)
+			r.Post("/jobs/report", params.JobHandler.ReportJobByServerIdAndJobId)
 		})
 	})
 

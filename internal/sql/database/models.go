@@ -192,9 +192,10 @@ type Server struct {
 type ServerAgentJob struct {
 	ID             string
 	UserID         pgtype.UUID
-	ServerID       pgtype.Text
+	ServerID       string
 	JobStatus      ServerJobStatus
 	JobType        ServerJobType
+	ErrorMessage   pgtype.Text
 	RepoName       string
 	RepositoryID   int64
 	InstallationID int64

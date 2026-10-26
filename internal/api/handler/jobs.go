@@ -67,6 +67,25 @@ func (h *JobHandler) CreatePendingJobForServer(w http.ResponseWriter, r *http.Re
 	util.SendJSON(w, http.StatusOK, result)
 }
 
+/*
+Claim the oldest pending job assigned to the authenticated server agent
+
+API URL: GET /agent/jobs/claim
+
+Args:
+
+	none
+
+Returns:
+
+	the claimed job and temporary GitHub credentials (HTTP 200), or
+	an empty response when no jobs are available (HTTP 204).
+
+Raises:
+
+	401: invalid agent identity
+	500: unable to claim the job or create GitHub credentials
+*/
 func (h *JobHandler) ClaimJob(w http.ResponseWriter, r *http.Request) {
 	agentIdentity, ok := auth.AgentIdentityFromContext(r.Context())
 	if !ok {
@@ -86,4 +105,54 @@ func (h *JobHandler) ClaimJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.SendJSON(w, http.StatusOK, result)
+}
+
+/*
+Report the current status of a job assigned to the authenticated server agent
+
+API URL: POST /agent/jobs/report
+
+Args:
+
+	job_id: the ID of the assigned job
+	job_status: ongoing, success, or failed
+	error: the failure message when job_status is failed
+
+Returns:
+
+	an empty response (HTTP 204).
+
+Raises:
+
+	400: invalid request body or job status
+	401: invalid agent identity
+	404: job not found, owned by another server, or cannot transition status
+	500: unable to update the job
+*/
+func (h *JobHandler) ReportJobByServerIdAndJobId(w http.ResponseWriter, r *http.Request) {
+	agentIdentity, ok := auth.AgentIdentityFromContext(r.Context())
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Invalid agent identity"))
+		return
+	}
+
+	var request contract.ReportJobRequest
+	if err := util.DecodeJSON(r, &request); err != nil {
+		util.SendError(w, http.StatusBadRequest, errors.New("Invalid request body"))
+		return
+	}
+
+	if err := h.jobService.ReportJobByServerIdAndJobId(r.Context(), agentIdentity.ServerID, request); err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidJobStatus):
+			util.SendError(w, http.StatusBadRequest, err)
+		case errors.Is(err, service.ErrJobNotFound):
+			util.SendError(w, http.StatusNotFound, err)
+		default:
+			util.SendError(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

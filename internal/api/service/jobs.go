@@ -16,9 +16,11 @@ const (
 )
 
 var (
-	ErrInvalidServerId = errors.New("Server with given id doesn't exist.")
-	ErrInvalidRepoName = errors.New("Repository with given name doesn't exist. Please use the format `UserName/RepoName`.")
-	ErrNoJobsAvailable = errors.New("No job available.")
+	ErrInvalidServerId  = errors.New("Server with given id doesn't exist.")
+	ErrInvalidRepoName  = errors.New("Repository with given name doesn't exist. Please use the format `UserName/RepoName`.")
+	ErrNoJobsAvailable  = errors.New("No job available.")
+	ErrInvalidJobStatus = errors.New("Job status must be ongoing, success, or failed.")
+	ErrJobNotFound      = errors.New("Job doesn't exist or cannot be updated.")
 )
 
 type JobService struct {
@@ -82,15 +84,33 @@ func (s *JobService) ClaimJob(ctx context.Context, serverId string) (*contract.C
 		return nil, err
 	}
 
-	githubToken, err := s.githubService.CreateRepositoryAccessToken(ctx, job.InstallationID, job.RepositoryID)
+	githubToken, err := s.githubService.CreateRepositoryAccessToken(ctx, job.InstallationId, job.RepositoryId)
 	if err != nil {
 		return nil, err
 	}
 
 	return &contract.ClaimJobResponse{
-		JobId:       job.ID,
+		JobId:       job.Id,
 		JobType:     job.JobType,
 		CloneUrl:    "https://github.com/" + job.RepoName + ".git",
 		GithubToken: githubToken,
 	}, nil
+}
+
+func (s *JobService) ReportJobByServerIdAndJobId(ctx context.Context, serverId string, request contract.ReportJobRequest) error {
+	switch request.JobStatus {
+	case contract.StatusOngoing, contract.StatusSuccess, contract.StatusFailed:
+	default:
+		return ErrInvalidJobStatus
+	}
+
+	if err := s.jobRepository.ReportJobByServerIdAndJobId(ctx, serverId, request); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrJobNotFound
+		}
+
+		return err
+	}
+
+	return nil
 }
