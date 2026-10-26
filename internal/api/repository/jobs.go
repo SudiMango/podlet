@@ -46,17 +46,18 @@ func (r *JobRepository) CreatePendingJobForServer(ctx context.Context, userId st
 	}, nil
 }
 
-func (r *JobRepository) GetOldestJobByServerId(ctx context.Context, serverId string) (*contract.JobResponse, error) {
+func (r *JobRepository) GetOldestJobByServerId(ctx context.Context, serverId string) (*dto.JobResponse, error) {
 	result, err := r.store.GetOldestJobByServerId(ctx, serverId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &contract.JobResponse{
+	return &dto.JobResponse{
 		Id:             result.ID,
 		UserId:         result.UserID.String(),
 		ServerId:       result.ServerID,
 		JobStatus:      contract.JobStatus(result.JobStatus),
+		ErrorMessage:   &result.ErrorMessage.String,
 		JobType:        contract.JobType(result.JobType),
 		RepoName:       result.RepoName,
 		RepositoryId:   result.RepositoryID,
@@ -84,4 +85,111 @@ func (r *JobRepository) ReportJobByServerIdAndJobId(ctx context.Context, serverI
 	}
 
 	return nil
+}
+
+func (r *JobRepository) GetAllJobsByUserId(ctx context.Context, userId string) (*contract.JobsResponse, error) {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return nil, err
+	}
+
+	result, err := r.store.GetAllJobsByUserId(ctx, pgUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make(contract.JobsResponse, 0, len(result))
+	for _, job := range result {
+		var errorMessage *string
+		if job.ErrorMessage.Valid {
+			errorMessage = &job.ErrorMessage.String
+		}
+
+		j := contract.JobResponse{
+			Id:           job.ID,
+			ServerId:     job.ServerID,
+			JobStatus:    contract.JobStatus(job.JobStatus),
+			ErrorMessage: errorMessage,
+			JobType:      contract.JobType(job.JobType),
+			RepoName:     job.RepoName,
+			CreatedAt:    job.CreatedAt.Time,
+			UpdatedAt:    job.UpdatedAt.Time,
+		}
+
+		jobs = append(jobs, j)
+	}
+
+	return &jobs, err
+}
+
+func (r *JobRepository) GetAllJobsByServerIdAndUserId(ctx context.Context, userId string, serverId string) (*contract.JobsResponse, error) {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return nil, err
+	}
+
+	result, err := r.store.GetAllJobsByServerIdAndUserId(ctx, db.GetAllJobsByServerIdAndUserIdParams{
+		ServerID: serverId,
+		UserID:   pgUserId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make(contract.JobsResponse, 0, len(result))
+	for _, job := range result {
+		var errorMessage *string
+		if job.ErrorMessage.Valid {
+			errorMessage = &job.ErrorMessage.String
+		}
+
+		j := contract.JobResponse{
+			Id:           job.ID,
+			ServerId:     job.ServerID,
+			JobStatus:    contract.JobStatus(job.JobStatus),
+			ErrorMessage: errorMessage,
+			JobType:      contract.JobType(job.JobType),
+			RepoName:     job.RepoName,
+			CreatedAt:    job.CreatedAt.Time,
+			UpdatedAt:    job.UpdatedAt.Time,
+		}
+
+		jobs = append(jobs, j)
+	}
+
+	return &jobs, err
+}
+
+func (r *JobRepository) GetJobByJobIdAndUserId(ctx context.Context, userId string, jobId string) (*contract.JobResponse, error) {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return nil, err
+	}
+
+	job, err := r.store.GetJobByJobIdAndUserId(ctx, db.GetJobByJobIdAndUserIdParams{
+		ID:     jobId,
+		UserID: pgUserId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var errorMessage *string
+	if job.ErrorMessage.Valid {
+		errorMessage = &job.ErrorMessage.String
+	}
+
+	return &contract.JobResponse{
+		Id:           job.ID,
+		ServerId:     job.ServerID,
+		JobStatus:    contract.JobStatus(job.JobStatus),
+		ErrorMessage: errorMessage,
+		JobType:      contract.JobType(job.JobType),
+		RepoName:     job.RepoName,
+		CreatedAt:    job.CreatedAt.Time,
+		UpdatedAt:    job.UpdatedAt.Time,
+	}, err
 }

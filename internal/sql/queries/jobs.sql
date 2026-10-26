@@ -35,3 +35,20 @@ WHERE id = sqlc.arg(id)
     (job_status = 'pending' AND sqlc.arg(job_status)::server_job_status = 'ongoing')
     OR (job_status = 'ongoing' AND sqlc.arg(job_status)::server_job_status IN ('success', 'failed'))
   );
+
+-- name: GetAllJobsByUserId :many
+SELECT *
+FROM server_agent_jobs
+WHERE user_id = $1
+ORDER BY created_at DESC;
+
+-- name: GetAllJobsByServerIdAndUserId :many
+SELECT *
+FROM server_agent_jobs
+WHERE server_id = $1 AND user_id = $2
+ORDER BY created_at DESC;
+
+-- name: GetJobByJobIdAndUserId :one
+SELECT *
+FROM server_agent_jobs
+WHERE id = $1 AND user_id = $2;

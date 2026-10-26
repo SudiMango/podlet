@@ -67,6 +67,12 @@ func provideRouter(params RouterParams) *chi.Mux {
 
 			r.Post("/deploy", params.JobHandler.CreatePendingJobForServer)
 		})
+
+		r.Route("/jobs", func(r chi.Router) {
+			r.Get("/", params.JobHandler.GetAllJobsByUserId)
+			r.Get("/{jobId}", params.JobHandler.GetJobByJobIdAndUserId)
+			r.Get("/{serverId}/jobs", params.JobHandler.GetAllJobsByServerIdAndUserId)
+		})
 	})
 
 	// All server agent routes

@@ -62,6 +62,119 @@ func (q *Queries) CreatePendingJobForServer(ctx context.Context, arg CreatePendi
 	return i, err
 }
 
+const getAllJobsByServerIdAndUserId = `-- name: GetAllJobsByServerIdAndUserId :many
+SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
+FROM server_agent_jobs
+WHERE server_id = $1 AND user_id = $2
+ORDER BY created_at DESC
+`
+
+type GetAllJobsByServerIdAndUserIdParams struct {
+	ServerID string
+	UserID   pgtype.UUID
+}
+
+func (q *Queries) GetAllJobsByServerIdAndUserId(ctx context.Context, arg GetAllJobsByServerIdAndUserIdParams) ([]ServerAgentJob, error) {
+	rows, err := q.db.Query(ctx, getAllJobsByServerIdAndUserId, arg.ServerID, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ServerAgentJob{}
+	for rows.Next() {
+		var i ServerAgentJob
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ServerID,
+			&i.JobStatus,
+			&i.JobType,
+			&i.ErrorMessage,
+			&i.RepoName,
+			&i.RepositoryID,
+			&i.InstallationID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllJobsByUserId = `-- name: GetAllJobsByUserId :many
+SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
+FROM server_agent_jobs
+WHERE user_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetAllJobsByUserId(ctx context.Context, userID pgtype.UUID) ([]ServerAgentJob, error) {
+	rows, err := q.db.Query(ctx, getAllJobsByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ServerAgentJob{}
+	for rows.Next() {
+		var i ServerAgentJob
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ServerID,
+			&i.JobStatus,
+			&i.JobType,
+			&i.ErrorMessage,
+			&i.RepoName,
+			&i.RepositoryID,
+			&i.InstallationID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getJobByJobIdAndUserId = `-- name: GetJobByJobIdAndUserId :one
+SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
+FROM server_agent_jobs
+WHERE id = $1 AND user_id = $2
+`
+
+type GetJobByJobIdAndUserIdParams struct {
+	ID     string
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetJobByJobIdAndUserId(ctx context.Context, arg GetJobByJobIdAndUserIdParams) (ServerAgentJob, error) {
+	row := q.db.QueryRow(ctx, getJobByJobIdAndUserId, arg.ID, arg.UserID)
+	var i ServerAgentJob
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ServerID,
+		&i.JobStatus,
+		&i.JobType,
+		&i.ErrorMessage,
+		&i.RepoName,
+		&i.RepositoryID,
+		&i.InstallationID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getOldestJobByServerId = `-- name: GetOldestJobByServerId :one
 SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
 FROM server_agent_jobs

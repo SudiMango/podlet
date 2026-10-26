@@ -8,6 +8,7 @@ import (
 	"github.com/SudiMango/podlet/internal/api/service"
 	"github.com/SudiMango/podlet/internal/api/util"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/go-chi/chi/v5"
 )
 
 type JobHandler struct {
@@ -65,6 +66,140 @@ func (h *JobHandler) CreatePendingJobForServer(w http.ResponseWriter, r *http.Re
 	}
 
 	util.SendJSON(w, http.StatusOK, result)
+}
+
+/*
+Get all jobs owned by the current user
+
+API URL: GET /jobs
+
+Args:
+
+	status: optional pending, ongoing, success, or failed query filter
+
+Returns:
+
+	the user's jobs ordered from newest to oldest (HTTP 200).
+
+Raises:
+
+	400: invalid status filter
+	401: unauthorized user
+	500: unable to get jobs
+*/
+func (h *JobHandler) GetAllJobsByUserId(w http.ResponseWriter, r *http.Request) {
+	userId, ok := auth.CurrentUserID(r)
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	jobs, err := h.jobService.GetAllJobsByUserId(r.Context(), userId, r.URL.Query().Get("status"))
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidJobFilter) {
+			util.SendError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	util.SendJSON(w, http.StatusOK, jobs)
+}
+
+/*
+Get all jobs for one of the current user's servers
+
+API URL: GET /jobs/{serverId}/jobs
+
+Args:
+
+	serverId: the server ID from the URL path
+	status: optional pending, ongoing, success, or failed query filter
+
+Returns:
+
+	the server's jobs ordered from newest to oldest (HTTP 200).
+
+Raises:
+
+	400: serverId is missing or the status filter is invalid
+	401: unauthorized user
+	500: unable to get jobs
+*/
+func (h *JobHandler) GetAllJobsByServerIdAndUserId(w http.ResponseWriter, r *http.Request) {
+	userId, ok := auth.CurrentUserID(r)
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	serverId := chi.URLParam(r, "serverId")
+	if serverId == "" {
+		util.SendError(w, http.StatusBadRequest, errors.New("serverId is required"))
+		return
+	}
+
+	jobs, err := h.jobService.GetAllJobsByServerIdAndUserId(r.Context(), userId, serverId, r.URL.Query().Get("status"))
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidJobFilter) {
+			util.SendError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	util.SendJSON(w, http.StatusOK, jobs)
+}
+
+/*
+Get a job owned by the current user
+
+API URL: GET /jobs/{jobId}
+
+Args:
+
+	jobId: the job ID from the URL path
+
+Returns:
+
+	the requested job (HTTP 200).
+
+Raises:
+
+	400: jobId is missing
+	401: unauthorized user
+	404: job not found
+	500: unable to get the job
+*/
+func (h *JobHandler) GetJobByJobIdAndUserId(w http.ResponseWriter, r *http.Request) {
+	userId, ok := auth.CurrentUserID(r)
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	jobId := chi.URLParam(r, "jobId")
+	if jobId == "" {
+		util.SendError(w, http.StatusBadRequest, errors.New("jobId is required"))
+		return
+	}
+
+	job, err := h.jobService.GetJobByJobIdAndUserId(r.Context(), userId, jobId)
+	if err != nil {
+		if errors.Is(err, service.ErrJobNotFound) {
+			util.SendError(w, http.StatusNotFound, err)
+			return
+		}
+
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	util.SendJSON(w, http.StatusOK, job)
 }
 
 /*

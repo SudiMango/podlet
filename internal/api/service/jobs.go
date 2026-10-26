@@ -20,6 +20,7 @@ var (
 	ErrInvalidRepoName  = errors.New("Repository with given name doesn't exist. Please use the format `UserName/RepoName`.")
 	ErrNoJobsAvailable  = errors.New("No job available.")
 	ErrInvalidJobStatus = errors.New("Job status must be ongoing, success, or failed.")
+	ErrInvalidJobFilter = errors.New("Job status must be pending, ongoing, success, or failed.")
 	ErrJobNotFound      = errors.New("Job doesn't exist or cannot be updated.")
 )
 
@@ -113,4 +114,61 @@ func (s *JobService) ReportJobByServerIdAndJobId(ctx context.Context, serverId s
 	}
 
 	return nil
+}
+
+func (s *JobService) GetAllJobsByUserId(ctx context.Context, userId string, status string) (*contract.JobsResponse, error) {
+	jobs, err := s.jobRepository.GetAllJobsByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterJobsByStatus(jobs, status)
+}
+
+func (s *JobService) GetAllJobsByServerIdAndUserId(ctx context.Context, userId string, serverId string, status string) (*contract.JobsResponse, error) {
+	jobs, err := s.jobRepository.GetAllJobsByServerIdAndUserId(ctx, userId, serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterJobsByStatus(jobs, status)
+}
+
+func (s *JobService) GetJobByJobIdAndUserId(ctx context.Context, userId string, jobId string) (*contract.JobResponse, error) {
+	job, err := s.jobRepository.GetJobByJobIdAndUserId(ctx, userId, jobId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrJobNotFound
+		}
+
+		return nil, err
+	}
+
+	return job, nil
+}
+
+/*
+	Private helpers
+*/
+
+func filterJobsByStatus(jobs *contract.JobsResponse, status string) (*contract.JobsResponse, error) {
+	if status == "" {
+		return jobs, nil
+	}
+
+	jobStatus := contract.JobStatus(status)
+	switch jobStatus {
+	case contract.StatusPending, contract.StatusOngoing, contract.StatusSuccess, contract.StatusFailed:
+	default:
+		return nil, ErrInvalidJobFilter
+	}
+
+	filtered := make(contract.JobsResponse, 0)
+	for _, job := range *jobs {
+		if job.JobStatus == jobStatus {
+			filtered = append(filtered, job)
+		}
+	}
+
+	return &filtered, nil
 }
