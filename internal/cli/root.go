@@ -5,6 +5,7 @@ import (
 	"os"
 
 	authcmd "github.com/SudiMango/podlet/internal/cli/auth"
+	reposcmd "github.com/SudiMango/podlet/internal/cli/repos"
 	servercmd "github.com/SudiMango/podlet/internal/cli/server"
 	"github.com/spf13/cobra"
 )
@@ -32,6 +33,7 @@ func (RootCommand) Command() *cobra.Command {
 		UninstallCommand{}.Command(),
 		authcmd.AuthCommand{}.Command(),
 		servercmd.ServerCommand{}.Command(),
+		reposcmd.ReposCommand{}.Command(),
 	)
 
 	return cmd

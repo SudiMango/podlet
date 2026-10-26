@@ -67,6 +67,24 @@ type Account struct {
 	UpdatedAt            pgtype.Timestamptz
 }
 
+type GithubInstallation struct {
+	ID                  int64
+	UserID              pgtype.UUID
+	AccountID           int64
+	AccountLogin        string
+	AccountType         string
+	RepositorySelection string
+	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
+}
+
+type GithubInstallationState struct {
+	ID        string
+	UserID    pgtype.UUID
+	CreatedAt pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+}
+
 type PendingServer struct {
 	ID                    string
 	UserID                pgtype.UUID

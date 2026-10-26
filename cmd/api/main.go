@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/SudiMango/podlet/internal/api/auth"
+	"github.com/SudiMango/podlet/internal/api/github"
 	"github.com/SudiMango/podlet/internal/api/handler"
 	"github.com/SudiMango/podlet/internal/api/repository"
 	"github.com/SudiMango/podlet/internal/api/server"
@@ -24,6 +25,7 @@ func main() {
 	fx.New(
 		database.Module,
 		auth.Module,
+		github.Module,
 		repository.Module,
 		service.Module,
 		handler.Module,
