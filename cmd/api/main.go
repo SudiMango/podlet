@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/SudiMango/podlet/internal/api/auth"
+	"github.com/SudiMango/podlet/internal/api/cloudflare"
 	"github.com/SudiMango/podlet/internal/api/github"
 	"github.com/SudiMango/podlet/internal/api/handler"
 	"github.com/SudiMango/podlet/internal/api/repository"
@@ -26,6 +27,7 @@ func main() {
 		database.Module,
 		auth.Module,
 		github.Module,
+		cloudflare.Module,
 		repository.Module,
 		service.Module,
 		handler.Module,
