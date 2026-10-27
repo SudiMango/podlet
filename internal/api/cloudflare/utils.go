@@ -66,7 +66,7 @@ func (c *Client) doJSON(
 }
 
 func generateCode(length int) (string, error) {
-	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 	code := make([]byte, length)
 	for i := range code {

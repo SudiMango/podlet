@@ -7,7 +7,7 @@ import (
 	"github.com/SudiMango/podlet/internal/contract"
 )
 
-const codeLength = 10
+const codeLength = 7
 
 func (c *Client) CreateTunnel(ctx context.Context) (*contract.CreateTunnelResponse, error) {
 	// Generate random code
@@ -124,7 +124,7 @@ func (c *Client) UpdateIngressConfig(ctx context.Context, tunnelId string, reque
 	return &response.Result, nil
 }
 
-func (c *Client) CreateDNSRecord(ctx context.Context, tunnelId string, name string) (*contract.CreateDNSRecordResponse, error) {
+func (c *Client) CreateDNSRecord(ctx context.Context, tunnelId string) (*contract.CreateDNSRecordResponse, error) {
 	// Generate random code
 	code, err := generateCode(codeLength)
 	if err != nil {
@@ -134,7 +134,7 @@ func (c *Client) CreateDNSRecord(ctx context.Context, tunnelId string, name stri
 	// Create record
 	request := CreateDNSRecordRequest{
 		Type:    "CNAME",
-		Name:    name + "-" + code + ".podlet.dev",
+		Name:    code + ".podlet.dev",
 		Content: tunnelId + ".cfargotunnel.com",
 		Proxied: true,
 		TTL:     1,
