@@ -2,6 +2,7 @@ package cloudflare
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/SudiMango/podlet/internal/contract"
@@ -87,6 +88,22 @@ func (c *Client) GetIngressConfigs(ctx context.Context, tunnelId string) (*contr
 	response.Result.Config.Ingress = ingress
 
 	return &response.Result, nil
+}
+
+func (c *Client) GetIngressConfig(ctx context.Context, tunnelId string, hostname string) (*contract.Ingress, error) {
+	configs, err := c.GetIngressConfigs(ctx, tunnelId)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range configs.Config.Ingress {
+		ingress := &configs.Config.Ingress[i]
+		if ingress.Hostname != nil && *ingress.Hostname == hostname {
+			return ingress, nil
+		}
+	}
+
+	return nil, fmt.Errorf("ingress config for hostname %q not found", hostname)
 }
 
 func (c *Client) UpdateIngressConfig(ctx context.Context, tunnelId string, request PutIngressRequest) (*contract.GetIngressConfigsResponse, error) {

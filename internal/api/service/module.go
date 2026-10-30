@@ -9,5 +9,6 @@ var Module = fx.Module("service",
 		NewServerService,
 		NewGithubService,
 		NewJobService,
+		NewCloudflareService,
 	),
 )

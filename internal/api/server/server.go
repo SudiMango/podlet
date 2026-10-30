@@ -25,13 +25,14 @@ var Module = fx.Module("server",
 type RouterParams struct {
 	fx.In
 
-	Auth             *limen.Limen
-	ServerRepository *repository.ServerRepository
-	HealthHandler    *handler.HealthHandler
-	ProfileHandler   *handler.ProfileHandler
-	ServerHandler    *handler.ServerHandler
-	GithubHandler    *handler.GithubHandler
-	JobHandler       *handler.JobHandler
+	Auth              *limen.Limen
+	ServerRepository  *repository.ServerRepository
+	HealthHandler     *handler.HealthHandler
+	ProfileHandler    *handler.ProfileHandler
+	ServerHandler     *handler.ServerHandler
+	GithubHandler     *handler.GithubHandler
+	JobHandler        *handler.JobHandler
+	CloudflareHandler *handler.CloudflareHandler
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
@@ -84,6 +85,9 @@ func provideRouter(params RouterParams) *chi.Mux {
 			r.Delete("/", params.ServerHandler.DeleteServerByUserIdAndServerId)
 			r.Get("/jobs/claim", params.JobHandler.ClaimJob)
 			r.Post("/jobs/report", params.JobHandler.ReportJobByServerIdAndJobId)
+
+			r.Post("/cftunnel", params.CloudflareHandler.CreateTunnel)
+			r.Post("/cfdns", params.CloudflareHandler.CreateDNSRecord)
 		})
 	})
 
