@@ -22,7 +22,7 @@ func JobRegistry(c *client.Client, cfg *config.Config) map[contract.JobType]JobE
 		contract.JobTypeInstallDocker:       jobs.InstallDockerJob{},
 		contract.JobTypeEnsurePodletNetwork: jobs.EnsurePodletNetworkJob{},
 		contract.JobTypeCreatePodletNetwork: jobs.CreatePodletNetworkJob{},
-		contract.JobTypeEnsureCfTunnel:      jobs.NewEnsureCfTunnelJob(c),
+		contract.JobTypeEnsureCfTunnel:      jobs.NewEnsureCfTunnelJob(c, cfg),
 		contract.JobTypeCreateCfTunnel:      jobs.NewCreateCfTunnelJob(c, cfg),
 		contract.JobTypeEnsureCfContainer:   jobs.EnsureCfContainerJob{},
 		contract.JobTypeCreateCfContainer:   jobs.NewCreateCfContainerJob(cfg),

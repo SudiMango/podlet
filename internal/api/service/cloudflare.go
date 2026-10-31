@@ -65,6 +65,12 @@ func (s *CloudflareService) GetTunnelByUserIdAndServerId(ctx context.Context, us
 		return nil, err
 	}
 
+	token, err := s.cloudflareClient.GetTunnelConnectorToken(ctx, result.Id)
+	if err != nil {
+		return nil, err
+	}
+	result.ConnectorToken = token
+
 	return result, nil
 }
 

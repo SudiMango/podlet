@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/SudiMango/podlet/internal/agent/client"
+	"github.com/SudiMango/podlet/internal/agent/config"
 	"github.com/SudiMango/podlet/internal/contract"
 )
 
@@ -16,11 +17,13 @@ var (
 
 type EnsureCfTunnelJob struct {
 	client *client.Client
+	config *config.Config
 }
 
-func NewEnsureCfTunnelJob(client *client.Client) EnsureCfTunnelJob {
+func NewEnsureCfTunnelJob(client *client.Client, config *config.Config) EnsureCfTunnelJob {
 	return EnsureCfTunnelJob{
 		client: client,
+		config: config,
 	}
 }
 
@@ -38,14 +41,24 @@ func (j EnsureCfTunnelJob) Execute(ctx context.Context, job *contract.ClaimJobRe
 		&tunnel,
 	)
 
-	switch {
-	case err == nil:
-		return nil
-
-	case client.IsStatus(err, http.StatusNotFound):
-		return ErrCfTunnelNotFound
-
-	default:
+	if err != nil {
+		if client.IsStatus(err, http.StatusNotFound) {
+			return ErrCfTunnelNotFound
+		}
 		return fmt.Errorf("check for Cloudflare tunnel: %w", err)
 	}
+
+	if tunnel.ConnectorToken == nil || *tunnel.ConnectorToken == "" {
+		return errors.New("check for Cloudflare tunnel: connector token is missing")
+	}
+	if j.config == nil {
+		return errors.New("check for Cloudflare tunnel: config is not configured")
+	}
+
+	j.config.CfConnectorToken = *tunnel.ConnectorToken
+	if err := config.SaveAgentConfig(j.config); err != nil {
+		return fmt.Errorf("save connector token: %w", err)
+	}
+
+	return nil
 }
