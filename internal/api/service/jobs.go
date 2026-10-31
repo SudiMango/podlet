@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/SudiMango/podlet/internal/api/dto"
@@ -16,12 +17,13 @@ const (
 )
 
 var (
-	ErrInvalidServerId  = errors.New("Server with given id doesn't exist.")
-	ErrInvalidRepoName  = errors.New("Repository with given name doesn't exist. Please use the format `UserName/RepoName`.")
-	ErrNoJobsAvailable  = errors.New("No job available.")
-	ErrInvalidJobStatus = errors.New("Job status must be ongoing, success, or failed.")
-	ErrInvalidJobFilter = errors.New("Job status must be pending, ongoing, success, or failed.")
-	ErrJobNotFound      = errors.New("Job doesn't exist or cannot be updated.")
+	ErrInvalidServerId    = errors.New("Server with given id doesn't exist.")
+	ErrInvalidRepoName    = errors.New("Repository with given name doesn't exist. Please use the format `UserName/RepoName`.")
+	ErrNoJobsAvailable    = errors.New("No job available.")
+	ErrInvalidJobStatus   = errors.New("Job status must be ongoing, success, or failed.")
+	ErrInvalidJobFilter   = errors.New("Job status must be pending, ongoing, success, or failed.")
+	ErrJobNotFound        = errors.New("Job doesn't exist or cannot be updated.")
+	ErrUnsupportedJobType = errors.New("Job type not supported.")
 )
 
 type JobService struct {
@@ -77,6 +79,7 @@ func (s *JobService) CreatePendingJobForServer(ctx context.Context, userId strin
 }
 
 func (s *JobService) ClaimJob(ctx context.Context, serverId string) (*contract.ClaimJobResponse, error) {
+	// Get earliest queued job
 	job, err := s.jobRepository.GetOldestJobByServerId(ctx, serverId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -85,16 +88,26 @@ func (s *JobService) ClaimJob(ctx context.Context, serverId string) (*contract.C
 		return nil, err
 	}
 
-	githubToken, err := s.githubService.CreateRepositoryAccessToken(ctx, job.InstallationId, job.RepositoryId)
+	// Get job payload
+	payload, err := s.prepareJobPayload(ctx, job)
+	if err != nil {
+		return nil, err
+	}
+
+	// Report job as claimed and return
+	err = s.ReportJobByServerIdAndJobId(ctx, serverId, contract.ReportJobRequest{
+		JobId:     job.Id,
+		JobStatus: contract.StatusOngoing,
+		Error:     "",
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &contract.ClaimJobResponse{
-		JobId:       job.Id,
-		JobType:     job.JobType,
-		CloneUrl:    "https://github.com/" + job.RepoName + ".git",
-		GithubToken: githubToken,
+		Id:      job.Id,
+		Type:    job.JobType,
+		Payload: payload,
 	}, nil
 }
 
@@ -171,4 +184,22 @@ func filterJobsByStatus(jobs *contract.JobsResponse, status string) (*contract.J
 	}
 
 	return &filtered, nil
+}
+
+func (s *JobService) prepareJobPayload(ctx context.Context, job *dto.JobResponse) (json.RawMessage, error) {
+	switch job.JobType {
+	case contract.JobTypeCloneRepository:
+		token, err := s.githubService.CreateRepositoryAccessToken(ctx, job.InstallationId, job.RepositoryId)
+		if err != nil {
+			return nil, err
+		}
+
+		return json.Marshal(contract.CloneRepositoryJob{
+			CloneUrl:    "https://github.com/" + job.RepoName + ".git",
+			GithubToken: token,
+		})
+
+	default:
+		return nil, ErrUnsupportedJobType
+	}
 }
