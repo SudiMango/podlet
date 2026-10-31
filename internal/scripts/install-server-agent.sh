@@ -29,12 +29,19 @@ if [[ "$(uname -s)" != "Linux" ]]; then
     exit 1
 fi
 
+MISSING_COMMANDS=()
 for command in curl jq sha256sum systemctl install awk; do
     if ! command -v "$command" >/dev/null 2>&1; then
-        echo "Error: required command not found: $command" >&2
-        exit 1
+        MISSING_COMMANDS+=("$command")
     fi
 done
+
+if [[ "${#MISSING_COMMANDS[@]}" -gt 0 ]]; then
+    echo "Error: missing required commands: ${MISSING_COMMANDS[*]}" >&2
+    echo "Install them with your system package manager, then rerun the installer." >&2
+    echo "Ubuntu/Debian: apt-get update && apt-get install -y curl jq coreutils systemd gawk" >&2
+    exit 1
+fi
 
 if [[ ! -r /dev/tty ]]; then
     echo "Error: an interactive terminal is required for registration." >&2
