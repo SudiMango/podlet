@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/SudiMango/podlet/internal/agent/jobs"
+	initializejobs "github.com/SudiMango/podlet/internal/agent/jobs/system/initialize"
 	"github.com/SudiMango/podlet/internal/contract"
 )
 
@@ -34,7 +34,7 @@ func (a *Agent) Initialize(ctx context.Context, showProgress bool) error {
 	if err := runStep(showProgress, 3, total, "Ensuring Cloudflare tunnel", func() error {
 		e := a.executors[contract.JobTypeEnsureCfTunnel]
 		if err := e.Execute(ctx, nil); err != nil {
-			if !errors.Is(err, jobs.ErrCfTunnelNotFound) {
+			if !errors.Is(err, initializejobs.ErrCfTunnelNotFound) {
 				return err
 			}
 			return a.executors[contract.JobTypeCreateCfTunnel].Execute(ctx, nil)

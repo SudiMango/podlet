@@ -28,6 +28,10 @@ const (
 	JobTypeInstallRailpack     JobType = "install_railpack"
 	JobTypeEnsureBuildkit      JobType = "ensure_buildkit"
 	JobTypeSetupBuildkit       JobType = "setup_buildkit"
+	JobTypeRemoveCfContainer   JobType = "remove_cf_container"
+	JobTypeRemoveBuildkit      JobType = "remove_buildkit"
+	JobTypeRemovePodletNetwork JobType = "remove_podlet_network"
+	JobTypeUninstallRailpack   JobType = "uninstall_railpack"
 	JobTypeCloneRepository     JobType = "clone_repository"
 )
 

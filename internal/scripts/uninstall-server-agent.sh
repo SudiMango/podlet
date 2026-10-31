@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly BINARY_PATH="${HOME}/.local/bin/podlet-agent"
-readonly DATA_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/podlet"
-readonly UNINSTALLER_PATH="${DATA_DIR}/uninstall-server-agent.sh"
-readonly USER_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
-readonly CONFIG_DIR="${USER_CONFIG_DIR}/podlet"
-readonly CONFIG_FILE="${CONFIG_DIR}/server.json"
-readonly SERVICE_FILE="${USER_CONFIG_DIR}/systemd/user/podlet-agent.service"
+readonly BINARY_PATH="/usr/local/bin/podlet-agent"
+readonly DATA_DIR="/var/lib/podlet"
+readonly CONFIG_DIR="/etc/podlet"
+readonly SERVICE_FILE="/etc/systemd/system/podlet-agent.service"
 
-if [[ "${EUID}" -eq 0 ]]; then
-    echo "Error: run this uninstaller without sudo or root." >&2
+if [[ "${EUID}" -ne 0 ]]; then
+    echo "Error: this uninstaller must run as root." >&2
     exit 1
 fi
 
@@ -28,18 +25,16 @@ if ! command -v systemctl >/dev/null 2>&1; then
 fi
 
 if [[ "$FROM_AGENT" == "true" ]]; then
-    systemctl --user disable podlet-agent.service >/dev/null 2>&1 || true
+    systemctl disable podlet-agent.service >/dev/null 2>&1 || true
 else
-    systemctl --user disable --now podlet-agent.service >/dev/null 2>&1 || true
+    systemctl disable --now podlet-agent.service >/dev/null 2>&1 || true
 fi
 rm -f "$SERVICE_FILE"
-systemctl --user daemon-reload
-systemctl --user reset-failed podlet-agent.service >/dev/null 2>&1 || true
+systemctl daemon-reload
+systemctl reset-failed podlet-agent.service >/dev/null 2>&1 || true
 
 rm -f "$BINARY_PATH"
-rm -f "$CONFIG_FILE"
-rmdir "$CONFIG_DIR" 2>/dev/null || true
-rm -f "$UNINSTALLER_PATH"
-rmdir "$DATA_DIR" 2>/dev/null || true
+rm -rf "$CONFIG_DIR"
+rm -rf "$DATA_DIR"
 
 echo "Podlet server agent uninstalled successfully."
