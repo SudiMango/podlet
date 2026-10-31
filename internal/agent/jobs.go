@@ -61,7 +61,13 @@ func (a *Agent) claimJob(ctx context.Context) (string, error) {
 }
 
 func (a *Agent) executeJob(ctx context.Context, job contract.ClaimJobResponse) {
-	defer a.busy.Store(false)
+	defer func() {
+		a.busy.Store(false)
+		select {
+		case a.jobFinished <- struct{}{}:
+		default:
+		}
+	}()
 
 	executor := a.executors[job.Type]
 	err := executor.Execute(ctx, &job)

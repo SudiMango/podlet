@@ -34,6 +34,12 @@ func (a *Agent) reportHeartbeat(ctx context.Context) (bool, error) {
 
 	switch *response.Action {
 	case contract.ActionUninstall:
+		a.uninstallRequested.Store(true)
+
+		if a.busy.Load() {
+			return false, nil
+		}
+
 		if err := a.Uninstall(ctx); err != nil {
 			return false, err
 		}
