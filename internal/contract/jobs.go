@@ -1,6 +1,9 @@
 package contract
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Request
 
@@ -13,10 +16,9 @@ type ReportJobRequest struct {
 // Response
 
 type ClaimJobResponse struct {
-	JobId       string  `json:"id"`
-	JobType     JobType `json:"type"`
-	CloneUrl    string  `json:"clone_url"`
-	GithubToken string  `json:"github_token"`
+	Id      string          `json:"id"`
+	Type    JobType         `json:"type"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 type JobResponse struct {
@@ -31,3 +33,10 @@ type JobResponse struct {
 }
 
 type JobsResponse []JobResponse
+
+// Job payload structures
+
+type CloneRepositoryJob struct {
+	CloneUrl    string `json:"clone_url"`
+	GithubToken string `json:"github_token"`
+}

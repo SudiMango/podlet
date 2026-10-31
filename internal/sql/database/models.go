@@ -152,6 +152,16 @@ type Account struct {
 	UpdatedAt            pgtype.Timestamptz
 }
 
+type DnsRecord struct {
+	ID        string
+	Name      string
+	Service   string
+	UserID    pgtype.UUID
+	ServerID  string
+	TunnelID  string
+	CreatedAt pgtype.Timestamptz
+}
+
 type GithubInstallation struct {
 	ID                  int64
 	UserID              pgtype.UUID
@@ -211,6 +221,14 @@ type Session struct {
 	ExpiresAt  pgtype.Timestamptz
 	LastAccess pgtype.Timestamptz
 	Metadata   pgtype.Text
+}
+
+type Tunnel struct {
+	ID        string
+	Name      string
+	UserID    pgtype.UUID
+	ServerID  string
+	CreatedAt pgtype.Timestamptz
 }
 
 type User struct {
