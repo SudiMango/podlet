@@ -6,8 +6,32 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/SudiMango/podlet/internal/agent/client"
+	"github.com/SudiMango/podlet/internal/agent/config"
+	"github.com/SudiMango/podlet/internal/agent/jobs"
 	"github.com/SudiMango/podlet/internal/contract"
 )
+
+type JobExecutor interface {
+	Execute(ctx context.Context, job *contract.ClaimJobResponse) error
+}
+
+func JobRegistry(c *client.Client, cfg *config.Config) map[contract.JobType]JobExecutor {
+	return map[contract.JobType]JobExecutor{
+		contract.JobTypeEnsureDocker:        jobs.EnsureDockerJob{},
+		contract.JobTypeInstallDocker:       jobs.InstallDockerJob{},
+		contract.JobTypeEnsurePodletNetwork: jobs.EnsurePodletNetworkJob{},
+		contract.JobTypeCreatePodletNetwork: jobs.CreatePodletNetworkJob{},
+		contract.JobTypeEnsureCfTunnel:      jobs.NewEnsureCfTunnelJob(c),
+		contract.JobTypeCreateCfTunnel:      jobs.NewCreateCfTunnelJob(c, cfg),
+		contract.JobTypeEnsureCfContainer:   jobs.EnsureCfContainerJob{},
+		contract.JobTypeCreateCfContainer:   jobs.NewCreateCfContainerJob(cfg),
+		contract.JobTypeEnsureRailpack:      jobs.EnsureRailpackJob{},
+		contract.JobTypeInstallRailpack:     jobs.InstallRailpackJob{},
+		contract.JobTypeEnsureBuildkit:      jobs.EnsureBuildkitJob{},
+		contract.JobTypeSetupBuildkit:       jobs.SetupBuildkitJob{},
+	}
+}
 
 func (a *Agent) claimJob(ctx context.Context) (string, error) {
 	var job *contract.ClaimJobResponse

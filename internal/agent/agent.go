@@ -7,7 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/SudiMango/podlet/internal/agent/client"
 	"github.com/SudiMango/podlet/internal/agent/config"
+	"github.com/SudiMango/podlet/internal/contract"
 )
 
 const (
@@ -15,9 +17,10 @@ const (
 )
 
 type Agent struct {
-	config *config.Config
-	client *Client
-	busy   atomic.Bool
+	config    *config.Config
+	client    *client.Client
+	busy      atomic.Bool
+	executors map[contract.JobType]JobExecutor
 }
 
 func New() (*Agent, error) {
@@ -26,13 +29,20 @@ func New() (*Agent, error) {
 		return nil, err
 	}
 
+	client := client.NewClient(agentConfig.APIURL, agentConfig.Token)
+
 	return &Agent{
-		config: agentConfig,
-		client: NewClient(agentConfig.APIURL, agentConfig.Token),
+		config:    agentConfig,
+		client:    client,
+		executors: JobRegistry(client, agentConfig),
 	}, nil
 }
 
 func (a *Agent) Run(ctx context.Context) error {
+	if err := a.Initialize(ctx); err != nil {
+		return fmt.Errorf("initialize agent: %w", err)
+	}
+
 	// Report heartbeat
 	uninstalled, err := a.reportHeartbeat(ctx)
 	if err != nil {

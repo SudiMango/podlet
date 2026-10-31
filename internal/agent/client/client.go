@@ -1,4 +1,4 @@
-package agent
+package client
 
 import (
 	"bytes"
@@ -15,6 +15,11 @@ type Client struct {
 	baseURL    string
 	token      string
 	httpClient *http.Client
+}
+
+type APIError struct {
+	StatusCode int
+	Message    string
 }
 
 func NewClient(baseURL string, token string) *Client {
@@ -58,15 +63,16 @@ func (c *Client) DoJSON(
 	defer response.Body.Close()
 
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		var apiError struct {
+		var body struct {
 			Message string `json:"message"`
 		}
 
-		if err := json.NewDecoder(response.Body).Decode(&apiError); err == nil && apiError.Message != "" {
-			return errors.New(apiError.Message)
-		}
+		_ = json.NewDecoder(response.Body).Decode(&body)
 
-		return fmt.Errorf("API returned %s", response.Status)
+		return &APIError{
+			StatusCode: response.StatusCode,
+			Message:    body.Message,
+		}
 	}
 
 	if output != nil && response.StatusCode != http.StatusNoContent {
@@ -76,4 +82,22 @@ func (c *Client) DoJSON(
 	}
 
 	return nil
+}
+
+func (e *APIError) Error() string {
+	if e.Message != "" {
+		return e.Message
+	}
+
+	return fmt.Sprintf(
+		"API returned HTTP %d",
+		e.StatusCode,
+	)
+}
+
+func IsStatus(err error, status int) bool {
+	var apiError *APIError
+
+	return errors.As(err, &apiError) &&
+		apiError.StatusCode == status
 }

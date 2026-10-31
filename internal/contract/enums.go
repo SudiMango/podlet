@@ -16,7 +16,19 @@ const (
 type JobType string
 
 const (
-	JobTypeCloneRepository JobType = "clone_repository"
+	JobTypeEnsureDocker        JobType = "ensure_docker"
+	JobTypeInstallDocker       JobType = "install_docker"
+	JobTypeEnsurePodletNetwork JobType = "ensure_podlet_network"
+	JobTypeCreatePodletNetwork JobType = "create_podlet_network"
+	JobTypeEnsureCfTunnel      JobType = "ensure_cf_tunnel"
+	JobTypeCreateCfTunnel      JobType = "create_cf_tunnel"
+	JobTypeEnsureCfContainer   JobType = "ensure_cf_container"
+	JobTypeCreateCfContainer   JobType = "create_cf_container"
+	JobTypeEnsureRailpack      JobType = "ensure_railpack"
+	JobTypeInstallRailpack     JobType = "install_railpack"
+	JobTypeEnsureBuildkit      JobType = "ensure_buildkit"
+	JobTypeSetupBuildkit       JobType = "setup_buildkit"
+	JobTypeCloneRepository     JobType = "clone_repository"
 )
 
 type JobStatus string
