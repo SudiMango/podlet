@@ -12,13 +12,10 @@ import (
 type CreatePodletNetworkJob struct{}
 
 func (CreatePodletNetworkJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
-	fmt.Println("Creating Podlet network...")
-
 	output, err := exec.CommandContext(ctx, "docker", "network", "create", "podlet").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("create Podlet network: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 
-	fmt.Println("Successfully created Podlet network!")
 	return nil
 }

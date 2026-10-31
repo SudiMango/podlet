@@ -12,8 +12,6 @@ import (
 type InstallRailpackJob struct{}
 
 func (InstallRailpackJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
-	fmt.Println("Installing Railpack...")
-
 	output, err := exec.CommandContext(
 		ctx,
 		"bash",
@@ -26,6 +24,5 @@ func (InstallRailpackJob) Execute(ctx context.Context, job *contract.ClaimJobRes
 		return fmt.Errorf("install Railpack: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 
-	fmt.Println("Successfully installed Railpack!")
 	return nil
 }

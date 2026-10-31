@@ -39,7 +39,7 @@ func New() (*Agent, error) {
 }
 
 func (a *Agent) Run(ctx context.Context) error {
-	if err := a.Initialize(ctx); err != nil {
+	if err := a.Initialize(ctx, false); err != nil {
 		return fmt.Errorf("initialize agent: %w", err)
 	}
 

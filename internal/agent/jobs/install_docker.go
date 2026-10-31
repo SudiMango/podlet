@@ -12,8 +12,6 @@ import (
 type InstallDockerJob struct{}
 
 func (InstallDockerJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
-	fmt.Println("Installing Docker...")
-
 	output, err := exec.CommandContext(
 		ctx,
 		"bash",
@@ -26,6 +24,5 @@ func (InstallDockerJob) Execute(ctx context.Context, job *contract.ClaimJobRespo
 		return fmt.Errorf("install Docker: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 
-	fmt.Println("Successfully installed Docker!")
 	return nil
 }

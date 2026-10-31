@@ -13,8 +13,6 @@ import (
 type SetupBuildkitJob struct{}
 
 func (SetupBuildkitJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
-	fmt.Println("Setting up BuildKit...")
-
 	output, err := exec.CommandContext(
 		ctx,
 		"docker", "run", "-d",
@@ -33,6 +31,5 @@ func (SetupBuildkitJob) Execute(ctx context.Context, job *contract.ClaimJobRespo
 		return fmt.Errorf("set BUILDKIT_HOST: %w", err)
 	}
 
-	fmt.Println("Successfully set up BuildKit!")
 	return nil
 }

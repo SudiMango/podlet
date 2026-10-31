@@ -25,8 +25,6 @@ func NewEnsureCfTunnelJob(client *client.Client) EnsureCfTunnelJob {
 }
 
 func (j EnsureCfTunnelJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
-	fmt.Println("Checking for Cloudflare tunnel...")
-
 	if j.client == nil {
 		return errors.New("check for Cloudflare tunnel: client is not configured")
 	}
@@ -42,7 +40,6 @@ func (j EnsureCfTunnelJob) Execute(ctx context.Context, job *contract.ClaimJobRe
 
 	switch {
 	case err == nil:
-		fmt.Println("Cloudflare tunnel found!")
 		return nil
 
 	case client.IsStatus(err, http.StatusNotFound):

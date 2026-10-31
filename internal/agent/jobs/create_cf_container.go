@@ -20,8 +20,6 @@ func NewCreateCfContainerJob(config *config.Config) CreateCfContainerJob {
 }
 
 func (j CreateCfContainerJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
-	fmt.Println("Creating Cloudflare container...")
-
 	if j.config == nil || j.config.CfConnectorToken == "" {
 		return errors.New("create Cloudflare container: connector token is missing")
 	}
@@ -42,6 +40,5 @@ func (j CreateCfContainerJob) Execute(ctx context.Context, job *contract.ClaimJo
 		return fmt.Errorf("create Cloudflare container: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 
-	fmt.Println("Successfully created Cloudflare container!")
 	return nil
 }

@@ -24,8 +24,6 @@ func NewCreateCfTunnelJob(client *client.Client, config *config.Config) CreateCf
 }
 
 func (j CreateCfTunnelJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
-	fmt.Println("Creating Cloudflare tunnel...")
-
 	if j.client == nil {
 		return errors.New("create Cloudflare tunnel: client is not configured")
 	}
@@ -51,6 +49,5 @@ func (j CreateCfTunnelJob) Execute(ctx context.Context, job *contract.ClaimJobRe
 		return fmt.Errorf("save connector token: %w", err)
 	}
 
-	fmt.Println("Successfully created Cloudflare tunnel!")
 	return nil
 }

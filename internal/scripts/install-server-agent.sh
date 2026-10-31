@@ -142,6 +142,9 @@ install -m 0600 "${TEMP_DIR}/server.json" "$CONFIG_FILE"
 
 unset REGISTRATION_TOKEN REGISTER_BODY
 
+echo "Initializing Podlet agent..."
+"$BINARY_PATH" --initialize-only
+
 echo "Starting Podlet agent..."
 systemctl --user enable --now podlet-agent.service
 
