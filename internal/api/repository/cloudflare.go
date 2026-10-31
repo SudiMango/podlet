@@ -53,6 +53,30 @@ func (r *CloudflareRepository) CreateTunnel(ctx context.Context, userId string, 
 	}, nil
 }
 
+func (r *CloudflareRepository) GetTunnelByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*contract.TunnelResponse, error) {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return nil, err
+	}
+
+	result, err := r.store.GetTunnelByUserIdAndServerId(ctx, db.GetTunnelByUserIdAndServerIdParams{
+		UserID:   pgUserId,
+		ServerID: serverId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract.TunnelResponse{
+		Id:        result.ID,
+		Name:      result.Name,
+		UserId:    result.UserID.String(),
+		ServerId:  result.ServerID,
+		CreatedAt: result.CreatedAt.Time,
+	}, nil
+}
+
 /*
 	DNS Records
 */

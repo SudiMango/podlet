@@ -21,6 +21,10 @@ func NewCloudflareHandler(cloudflareService *service.CloudflareService) *Cloudfl
 }
 
 /*
+	Tunnels
+*/
+
+/*
 Create a Cloudflare tunnel for the authenticated server agent
 
 API URL: POST /agent/cftunnel
@@ -53,6 +57,50 @@ func (h *CloudflareHandler) CreateTunnel(w http.ResponseWriter, r *http.Request)
 
 	util.SendJSON(w, http.StatusOK, tunnel)
 }
+
+/*
+Get the Cloudflare tunnel assigned to the authenticated server agent
+
+API URL: GET /agent/cftunnel
+
+Args:
+
+	none
+
+Returns:
+
+	the Cloudflare tunnel assigned to the server (HTTP 200).
+
+Raises:
+
+	401: invalid agent identity or authentication token
+	404: no Cloudflare tunnel is assigned to the server
+	500: unable to retrieve the Cloudflare tunnel
+*/
+func (h *CloudflareHandler) GetTunnelByUserIdAndServerId(w http.ResponseWriter, r *http.Request) {
+	agentIdentity, ok := auth.AgentIdentityFromContext(r.Context())
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Invalid agent identity"))
+		return
+	}
+
+	tunnel, err := h.cloudflareService.GetTunnelByUserIdAndServerId(r.Context(), agentIdentity.UserID, agentIdentity.ServerID)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrCfTunnelNotFound):
+			util.SendError(w, http.StatusNotFound, err)
+		default:
+			util.SendError(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	util.SendJSON(w, http.StatusOK, tunnel)
+}
+
+/*
+	DNS Records
+*/
 
 /*
 Create a Cloudflare DNS record for the authenticated server agent
