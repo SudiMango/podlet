@@ -12,9 +12,20 @@ import (
 type EnsureCfContainerJob struct{}
 
 func (EnsureCfContainerJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
-	output, err := exec.CommandContext(ctx, "docker", "container", "inspect", "podlet-cloudflared").CombinedOutput()
+	output, err := exec.CommandContext(
+		ctx,
+		"docker", "container", "inspect",
+		"--format", "{{.State.Running}}",
+		"podlet-cloudflared",
+	).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("check for Cloudflare container: %w: %s", err, strings.TrimSpace(string(output)))
+	}
+	if strings.TrimSpace(string(output)) != "true" {
+		output, err = exec.CommandContext(ctx, "docker", "start", "podlet-cloudflared").CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("start Cloudflare container: %w: %s", err, strings.TrimSpace(string(output)))
+		}
 	}
 
 	return nil
