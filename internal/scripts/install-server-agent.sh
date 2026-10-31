@@ -5,33 +5,43 @@ readonly API_URL="https://api.podlet.dev"
 readonly AGENT_VERSION="v0.1.0"
 readonly DOWNLOAD_ROOT_URL="https://downloads.podlet.dev/server-agent"
 readonly DOWNLOAD_BASE_URL="${DOWNLOAD_ROOT_URL}/${AGENT_VERSION}"
-readonly BINARY_DIR="${HOME}/.local/bin"
+readonly BINARY_DIR="/usr/local/bin"
 readonly BINARY_PATH="${BINARY_DIR}/podlet-agent"
-readonly DATA_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/podlet"
+readonly DATA_DIR="/var/lib/podlet"
 readonly UNINSTALLER_PATH="${DATA_DIR}/uninstall-server-agent.sh"
-readonly USER_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
-readonly CONFIG_DIR="${USER_CONFIG_DIR}/podlet"
+readonly CONFIG_DIR="/etc/podlet"
 readonly CONFIG_FILE="${CONFIG_DIR}/server.json"
-readonly SERVICE_DIR="${USER_CONFIG_DIR}/systemd/user"
+readonly SERVICE_DIR="/etc/systemd/system"
 readonly SERVICE_FILE="${SERVICE_DIR}/podlet-agent.service"
 
-if [[ "${EUID}" -eq 0 ]]; then
-    echo "Error: run this installer without sudo or root." >&2
-    echo "Use: curl -fsSL https://downloads.podlet.dev/server-agent/install.sh | bash" >&2
+if [[ "${EUID}" -ne 0 ]]; then
+    echo "Error: this installer must run as root." >&2
+    echo "Use: curl -fsSL https://downloads.podlet.dev/server-agent/install.sh | sudo bash" >&2
     exit 1
 fi
+
+export HOME="/root"
+export XDG_CONFIG_HOME="/etc"
+export XDG_DATA_HOME="/var/lib"
 
 if [[ "$(uname -s)" != "Linux" ]]; then
     echo "Error: the Podlet agent currently supports Linux only." >&2
     exit 1
 fi
 
+MISSING_COMMANDS=()
 for command in curl jq sha256sum systemctl install awk; do
     if ! command -v "$command" >/dev/null 2>&1; then
-        echo "Error: required command not found: $command" >&2
-        exit 1
+        MISSING_COMMANDS+=("$command")
     fi
 done
+
+if [[ "${#MISSING_COMMANDS[@]}" -gt 0 ]]; then
+    echo "Error: missing required commands: ${MISSING_COMMANDS[*]}" >&2
+    echo "Install them with your system package manager, then rerun the installer." >&2
+    echo "Ubuntu/Debian: apt-get update && apt-get install -y curl jq coreutils systemd gawk" >&2
+    exit 1
+fi
 
 if [[ ! -r /dev/tty ]]; then
     echo "Error: an interactive terminal is required for registration." >&2
@@ -91,9 +101,16 @@ install -d -m 0755 "$SERVICE_DIR"
 cat >"$SERVICE_FILE" <<EOF
 [Unit]
 Description=Podlet Server Agent
+After=network-online.target docker.service
+Wants=network-online.target
 
 [Service]
 Type=simple
+User=root
+Group=root
+Environment=HOME=/root
+Environment=XDG_CONFIG_HOME=/etc
+Environment=XDG_DATA_HOME=/var/lib
 ExecStart="${BINARY_PATH}"
 Restart=on-failure
 RestartSec=5
@@ -101,10 +118,10 @@ NoNewPrivileges=true
 PrivateTmp=true
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
 EOF
 chmod 0644 "$SERVICE_FILE"
-systemctl --user daemon-reload
+systemctl daemon-reload
 
 echo "Registering server with Podlet..."
 REGISTER_BODY="$(jq -n \
@@ -142,28 +159,21 @@ install -m 0600 "${TEMP_DIR}/server.json" "$CONFIG_FILE"
 
 unset REGISTRATION_TOKEN REGISTER_BODY
 
+echo "Initializing Podlet agent..."
+"$BINARY_PATH" --initialize-only
+
 echo "Starting Podlet agent..."
-systemctl --user enable --now podlet-agent.service
+systemctl enable --now podlet-agent.service
 
-if ! systemctl --user is-active --quiet podlet-agent.service; then
+if ! systemctl is-active --quiet podlet-agent.service; then
     echo "Error: the Podlet agent failed to start." >&2
-    journalctl --user -u podlet-agent.service --no-pager -n 20 >&2 || true
+    journalctl -u podlet-agent.service --no-pager -n 20 >&2 || true
     exit 1
-fi
-
-LINGER_ENABLED="false"
-if command -v loginctl >/dev/null 2>&1; then
-    loginctl enable-linger "$USER" >/dev/null 2>&1 || true
-    LINGER_ENABLED="$(loginctl show-user "$USER" --property=Linger --value 2>/dev/null || true)"
 fi
 
 SERVER_ID="$(jq -r '.id' "${TEMP_DIR}/registration.json")"
 echo "Podlet agent installed successfully."
 echo "Server ID: ${SERVER_ID}"
 echo "Uninstaller: ${UNINSTALLER_PATH}"
-echo "Status: systemctl --user status podlet-agent"
-echo "Logs: journalctl --user -u podlet-agent -f"
-
-if [[ "$LINGER_ENABLED" != "yes" ]]; then
-    echo "Note: this system did not allow login lingering. The agent will run while your user session is active."
-fi
+echo "Status: systemctl status podlet-agent"
+echo "Logs: journalctl -u podlet-agent -f"

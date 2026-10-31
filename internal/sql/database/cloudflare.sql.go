@@ -229,6 +229,30 @@ func (q *Queries) GetTunnelByIdAndUserId(ctx context.Context, arg GetTunnelByIdA
 	return i, err
 }
 
+const getTunnelByUserIdAndServerId = `-- name: GetTunnelByUserIdAndServerId :one
+SELECT id, name, user_id, server_id, created_at FROM tunnels
+WHERE user_id = $1
+    AND server_id = $2
+`
+
+type GetTunnelByUserIdAndServerIdParams struct {
+	UserID   pgtype.UUID
+	ServerID string
+}
+
+func (q *Queries) GetTunnelByUserIdAndServerId(ctx context.Context, arg GetTunnelByUserIdAndServerIdParams) (Tunnel, error) {
+	row := q.db.QueryRow(ctx, getTunnelByUserIdAndServerId, arg.UserID, arg.ServerID)
+	var i Tunnel
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.UserID,
+		&i.ServerID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getTunnelsByUserId = `-- name: GetTunnelsByUserId :many
 SELECT id, name, user_id, server_id, created_at FROM tunnels
 WHERE user_id = $1
@@ -237,44 +261,6 @@ ORDER BY created_at DESC
 
 func (q *Queries) GetTunnelsByUserId(ctx context.Context, userID pgtype.UUID) ([]Tunnel, error) {
 	rows, err := q.db.Query(ctx, getTunnelsByUserId, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Tunnel{}
-	for rows.Next() {
-		var i Tunnel
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.UserID,
-			&i.ServerID,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTunnelsByUserIdAndServerId = `-- name: GetTunnelsByUserIdAndServerId :many
-SELECT id, name, user_id, server_id, created_at FROM tunnels
-WHERE user_id = $1
-    AND server_id = $2
-ORDER BY created_at DESC
-`
-
-type GetTunnelsByUserIdAndServerIdParams struct {
-	UserID   pgtype.UUID
-	ServerID string
-}
-
-func (q *Queries) GetTunnelsByUserIdAndServerId(ctx context.Context, arg GetTunnelsByUserIdAndServerIdParams) ([]Tunnel, error) {
-	rows, err := q.db.Query(ctx, getTunnelsByUserIdAndServerId, arg.UserID, arg.ServerID)
 	if err != nil {
 		return nil, err
 	}

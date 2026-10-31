@@ -18,11 +18,10 @@ SELECT * FROM tunnels
 WHERE user_id = $1
 ORDER BY created_at DESC;
 
--- name: GetTunnelsByUserIdAndServerId :many
+-- name: GetTunnelByUserIdAndServerId :one
 SELECT * FROM tunnels
 WHERE user_id = $1
-    AND server_id = $2
-ORDER BY created_at DESC;
+    AND server_id = $2;
 
 -- name: GetTunnelByIdAndUserId :one
 SELECT * FROM tunnels

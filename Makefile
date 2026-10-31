@@ -27,7 +27,7 @@ podlet:
 
 
 agent:
-	go run cmd/agent/main.go
+	go run cmd/agent/main.go $(args)
 
 
 # database related commands

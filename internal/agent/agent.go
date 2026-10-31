@@ -7,7 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/SudiMango/podlet/internal/agent/client"
 	"github.com/SudiMango/podlet/internal/agent/config"
+	"github.com/SudiMango/podlet/internal/contract"
 )
 
 const (
@@ -15,9 +17,12 @@ const (
 )
 
 type Agent struct {
-	config *config.Config
-	client *Client
-	busy   atomic.Bool
+	config             *config.Config
+	client             *client.Client
+	busy               atomic.Bool
+	uninstallRequested atomic.Bool
+	jobFinished        chan struct{}
+	executors          map[contract.JobType]JobExecutor
 }
 
 func New() (*Agent, error) {
@@ -26,13 +31,21 @@ func New() (*Agent, error) {
 		return nil, err
 	}
 
+	client := client.NewClient(agentConfig.APIURL, agentConfig.Token)
+
 	return &Agent{
-		config: agentConfig,
-		client: NewClient(agentConfig.APIURL, agentConfig.Token),
+		config:      agentConfig,
+		client:      client,
+		jobFinished: make(chan struct{}, 1),
+		executors:   JobRegistry(client, agentConfig),
 	}, nil
 }
 
 func (a *Agent) Run(ctx context.Context) error {
+	if err := a.Initialize(ctx, false); err != nil {
+		return fmt.Errorf("initialize agent: %w", err)
+	}
+
 	// Report heartbeat
 	uninstalled, err := a.reportHeartbeat(ctx)
 	if err != nil {
@@ -42,7 +55,7 @@ func (a *Agent) Run(ctx context.Context) error {
 	}
 
 	// Attempt to claim job
-	if !a.busy.Load() {
+	if !a.busy.Load() && !a.uninstallRequested.Load() {
 		_, err := a.claimJob(ctx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -57,6 +70,17 @@ func (a *Agent) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 
+		case <-a.jobFinished:
+			if !a.uninstallRequested.Load() {
+				continue
+			}
+
+			if err := a.Uninstall(ctx); err != nil {
+				fmt.Fprintf(os.Stderr, "uninstall agent: %v\n", err)
+				continue
+			}
+			return nil
+
 		case <-ticker.C:
 			// Report heartbeat
 			uninstalled, err := a.reportHeartbeat(ctx)
@@ -69,7 +93,7 @@ func (a *Agent) Run(ctx context.Context) error {
 			}
 
 			// Attempt to claim job
-			if !a.busy.Load() {
+			if !a.busy.Load() && !a.uninstallRequested.Load() {
 				_, err := a.claimJob(ctx)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%v\n", err)

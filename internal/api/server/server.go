@@ -86,6 +86,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 			r.Get("/jobs/claim", params.JobHandler.ClaimJob)
 			r.Post("/jobs/report", params.JobHandler.ReportJobByServerIdAndJobId)
 
+			r.Get("/cftunnel", params.CloudflareHandler.GetTunnelByUserIdAndServerId)
 			r.Post("/cftunnel", params.CloudflareHandler.CreateTunnel)
 			r.Post("/cfdns", params.CloudflareHandler.CreateDNSRecord)
 		})

@@ -2,11 +2,17 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/SudiMango/podlet/internal/api/cloudflare"
 	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/api/repository"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/jackc/pgx/v5"
+)
+
+var (
+	ErrCfTunnelNotFound = errors.New("Tunnel with given userId and serverId not found.")
 )
 
 type CloudflareService struct {
@@ -20,6 +26,10 @@ func NewCloudflareService(cloudflareRepository *repository.CloudflareRepository,
 		cloudflareClient:     cloudflareClient,
 	}
 }
+
+/*
+	Tunnels
+*/
 
 func (s *CloudflareService) CreateTunnel(ctx context.Context, userId string, serverId string) (*contract.TunnelResponse, error) {
 
@@ -44,6 +54,29 @@ func (s *CloudflareService) CreateTunnel(ctx context.Context, userId string, ser
 
 	return result, nil
 }
+
+func (s *CloudflareService) GetTunnelByUserIdAndServerId(ctx context.Context, userId string, serverId string) (*contract.TunnelResponse, error) {
+	result, err := s.cloudflareRepository.GetTunnelByUserIdAndServerId(ctx, userId, serverId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrCfTunnelNotFound
+		}
+
+		return nil, err
+	}
+
+	token, err := s.cloudflareClient.GetTunnelConnectorToken(ctx, result.Id)
+	if err != nil {
+		return nil, err
+	}
+	result.ConnectorToken = token
+
+	return result, nil
+}
+
+/*
+	DNS Records
+*/
 
 func (s *CloudflareService) CreateDNSRecord(ctx context.Context, userId string, serverId string, request dto.CreateDNSRecordRequest) (*contract.DnsRecordResponse, error) {
 
