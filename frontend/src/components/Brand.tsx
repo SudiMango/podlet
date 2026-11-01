@@ -10,7 +10,9 @@ export function BrandMark({ className = "brand-mark" }: { className?: string }) 
 export function Brand() {
   return (
     <span className="brand">
-      <BrandMark />
+      <span className="brand-emblem" aria-hidden="true">
+        <BrandMark />
+      </span>
       <span>podlet</span>
     </span>
   );

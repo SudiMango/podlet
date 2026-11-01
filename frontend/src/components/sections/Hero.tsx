@@ -23,7 +23,7 @@ export function Hero() {
           <InstallCommand label="Computer" command={cliCommand} />
           <InstallCommand label="Server" command={agentCommand} />
         </div>
-        <p className="install-note">Currently supports Linux and macOS only, on ARM64 and x86_64.</p>
+        <p className="install-note">Currently supports x86_64 Debian/Ubuntu only.</p>
       </div>
     </section>
   );

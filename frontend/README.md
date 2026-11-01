@@ -11,6 +11,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+The production container is published on loopback port `8082` by
+`deploy/compose.yaml`; the host reverse proxy should route `podlet.dev` to
+`http://127.0.0.1:8082`.
+
 ## Structure
 
 - `src/app` contains the page shell, global styles, and metadata.

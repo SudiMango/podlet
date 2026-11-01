@@ -18,15 +18,17 @@ permissions:
 env:
   REGISTRY: ghcr.io
   API_IMAGE: ghcr.io/sudimango/podlet/api
+  FRONTEND_IMAGE: ghcr.io/sudimango/podlet/frontend
 
 jobs:
   build-and-push:
-    name: Build and push API image
+    name: Build and push deployment images
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     outputs:
       api_tag: ${{ env.API_IMAGE }}:${{ steps.meta.outputs.sha }}
+      frontend_tag: ${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.sha }}
 
     steps:
       - name: Check out repository
@@ -62,8 +64,22 @@ jobs:
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
 
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.meta.outputs.sha }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
   deploy:
-    name: Deploy API to VPS
+    name: Deploy to VPS
     needs: build-and-push
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
@@ -94,24 +110,27 @@ jobs:
         run: |
           cat deploy/compose.yaml | ssh "${VPS_USER}@${VPS_HOST}" "cat > '${VPS_DEPLOY_PATH}/compose.yaml.template'"
 
-      - name: Render Compose file and restart API
+      - name: Render Compose file and restart services
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
           API_IMAGE: ${{ needs.build-and-push.outputs.api_tag }}
+          FRONTEND_IMAGE: ${{ needs.build-and-push.outputs.frontend_tag }}
         run: |
           ssh "${VPS_USER}@${VPS_HOST}" \
             API_IMAGE="${API_IMAGE}" \
+            FRONTEND_IMAGE="${FRONTEND_IMAGE}" \
             VPS_DEPLOY_PATH="${VPS_DEPLOY_PATH}" \
             bash -s <<'EOF'
           set -euo pipefail
 
           cd "${VPS_DEPLOY_PATH}"
 
-          export API_IMAGE
+          export API_IMAGE FRONTEND_IMAGE
           sed \
             -e "s|\${API_IMAGE}|${API_IMAGE}|g" \
+            -e "s|\${FRONTEND_IMAGE}|${FRONTEND_IMAGE}|g" \
             compose.yaml.template > compose.yaml
 
           docker compose pull
