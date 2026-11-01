@@ -66,7 +66,7 @@ func (s *JobService) CreatePendingJobForServer(ctx context.Context, userId strin
 	result, err := s.jobRepository.CreatePendingJobForServer(ctx, userId, dto.CreateJobRequest{
 		JobId:          util.GenerateID(jobPrefix),
 		ServerId:       request.ServerId,
-		JobType:        contract.JobTypeCloneRepository,
+		JobType:        contract.JobTypeDeployNewRepository,
 		RepoName:       githubRepository.FullName,
 		RepositoryId:   githubRepository.Id,
 		InstallationId: githubRepository.InstallationId,
@@ -188,7 +188,7 @@ func filterJobsByStatus(jobs *contract.JobsResponse, status string) (*contract.J
 
 func (s *JobService) prepareJobPayload(ctx context.Context, job *dto.JobResponse) (json.RawMessage, error) {
 	switch job.JobType {
-	case contract.JobTypeCloneRepository:
+	case contract.JobTypeDeployNewRepository:
 		token, err := s.githubService.CreateRepositoryAccessToken(ctx, job.InstallationId, job.RepositoryId)
 		if err != nil {
 			return nil, err

@@ -8,33 +8,48 @@ import (
 
 	"github.com/SudiMango/podlet/internal/agent/client"
 	"github.com/SudiMango/podlet/internal/agent/config"
+	"github.com/SudiMango/podlet/internal/agent/dto"
+	runtimejobs "github.com/SudiMango/podlet/internal/agent/jobs/runtime"
 	initializejobs "github.com/SudiMango/podlet/internal/agent/jobs/system/initialize"
 	uninstalljobs "github.com/SudiMango/podlet/internal/agent/jobs/system/uninstall"
 	"github.com/SudiMango/podlet/internal/contract"
 )
 
+type JobChain interface {
+	Execute(ctx context.Context, agent *Agent, job *contract.ClaimJobResponse) error
+}
+
 type JobExecutor interface {
 	Execute(ctx context.Context, job *contract.ClaimJobResponse) error
 }
 
-func JobRegistry(c *client.Client, cfg *config.Config) map[contract.JobType]JobExecutor {
-	return map[contract.JobType]JobExecutor{
-		contract.JobTypeEnsureDocker:        initializejobs.EnsureDockerJob{},
-		contract.JobTypeInstallDocker:       initializejobs.InstallDockerJob{},
-		contract.JobTypeEnsurePodletNetwork: initializejobs.EnsurePodletNetworkJob{},
-		contract.JobTypeCreatePodletNetwork: initializejobs.CreatePodletNetworkJob{},
-		contract.JobTypeEnsureCfTunnel:      initializejobs.NewEnsureCfTunnelJob(c, cfg),
-		contract.JobTypeCreateCfTunnel:      initializejobs.NewCreateCfTunnelJob(c, cfg),
-		contract.JobTypeEnsureCfContainer:   initializejobs.EnsureCfContainerJob{},
-		contract.JobTypeCreateCfContainer:   initializejobs.NewCreateCfContainerJob(cfg),
-		contract.JobTypeEnsureRailpack:      initializejobs.EnsureRailpackJob{},
-		contract.JobTypeInstallRailpack:     initializejobs.InstallRailpackJob{},
-		contract.JobTypeEnsureBuildkit:      initializejobs.EnsureBuildkitJob{},
-		contract.JobTypeSetupBuildkit:       initializejobs.SetupBuildkitJob{},
-		contract.JobTypeRemoveCfContainer:   uninstalljobs.RemoveCfContainerJob{},
-		contract.JobTypeRemoveBuildkit:      uninstalljobs.RemoveBuildkitJob{},
-		contract.JobTypeRemovePodletNetwork: uninstalljobs.RemovePodletNetworkJob{},
-		contract.JobTypeUninstallRailpack:   uninstalljobs.UninstallRailpackJob{},
+func JobRegistry(c *client.Client, cfg *config.Config) map[dto.JobType]JobExecutor {
+	return map[dto.JobType]JobExecutor{
+		dto.JobTypeEnsureDocker:        initializejobs.EnsureDockerJob{},
+		dto.JobTypeInstallDocker:       initializejobs.InstallDockerJob{},
+		dto.JobTypeEnsurePodletNetwork: initializejobs.EnsurePodletNetworkJob{},
+		dto.JobTypeCreatePodletNetwork: initializejobs.CreatePodletNetworkJob{},
+		dto.JobTypeEnsureCfTunnel:      initializejobs.NewEnsureCfTunnelJob(c, cfg),
+		dto.JobTypeCreateCfTunnel:      initializejobs.NewCreateCfTunnelJob(c, cfg),
+		dto.JobTypeEnsureCfContainer:   initializejobs.EnsureCfContainerJob{},
+		dto.JobTypeCreateCfContainer:   initializejobs.NewCreateCfContainerJob(cfg),
+		dto.JobTypeEnsureRailpack:      initializejobs.EnsureRailpackJob{},
+		dto.JobTypeInstallRailpack:     initializejobs.InstallRailpackJob{},
+		dto.JobTypeEnsureBuildkit:      initializejobs.EnsureBuildkitJob{},
+		dto.JobTypeSetupBuildkit:       initializejobs.SetupBuildkitJob{},
+		dto.JobTypeRemoveCfContainer:   uninstalljobs.RemoveCfContainerJob{},
+		dto.JobTypeRemoveBuildkit:      uninstalljobs.RemoveBuildkitJob{},
+		dto.JobTypeRemovePodletNetwork: uninstalljobs.RemovePodletNetworkJob{},
+		dto.JobTypeUninstallRailpack:   uninstalljobs.UninstallRailpackJob{},
+		dto.JobTypeCloneRepository:     runtimejobs.CloneRepositoryJob{},
+		dto.JobTypeBuildRepository:     runtimejobs.BuildRepositoryJob{},
+		dto.JobTypeCreateDnsRecord:     runtimejobs.NewCreateDNSRecordJob(c),
+	}
+}
+
+func ChainRegistry() map[contract.JobType]JobChain {
+	return map[contract.JobType]JobChain{
+		contract.JobTypeDeployNewRepository: DeployNewRepositoryChain{},
 	}
 }
 
@@ -69,8 +84,8 @@ func (a *Agent) executeJob(ctx context.Context, job contract.ClaimJobResponse) {
 		}
 	}()
 
-	executor := a.executors[job.Type]
-	err := executor.Execute(ctx, &job)
+	executor := a.chains[job.Type]
+	err := executor.Execute(ctx, a, &job)
 
 	// Report errors
 	if err != nil {

@@ -55,47 +55,6 @@ func (ns NullServerJobStatus) Value() (driver.Value, error) {
 	return string(ns.ServerJobStatus), nil
 }
 
-type ServerJobType string
-
-const (
-	ServerJobTypeCloneRepository ServerJobType = "clone_repository"
-)
-
-func (e *ServerJobType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = ServerJobType(s)
-	case string:
-		*e = ServerJobType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for ServerJobType: %T", src)
-	}
-	return nil
-}
-
-type NullServerJobType struct {
-	ServerJobType ServerJobType
-	Valid         bool // Valid is true if ServerJobType is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullServerJobType) Scan(value interface{}) error {
-	if value == nil {
-		ns.ServerJobType, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.ServerJobType.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullServerJobType) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.ServerJobType), nil
-}
-
 type ServerLifecycleState string
 
 const (
@@ -204,7 +163,7 @@ type ServerAgentJob struct {
 	UserID         pgtype.UUID
 	ServerID       string
 	JobStatus      ServerJobStatus
-	JobType        ServerJobType
+	JobType        string
 	ErrorMessage   pgtype.Text
 	RepoName       string
 	RepositoryID   int64
