@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/SudiMango/podlet/internal/agent/dto"
 )
 
 func (a *Agent) Uninstall(ctx context.Context) error {
@@ -44,11 +44,11 @@ func (a *Agent) Uninstall(ctx context.Context) error {
 }
 
 func (a *Agent) removeManagedResources(ctx context.Context) error {
-	jobTypes := []contract.JobType{
-		contract.JobTypeRemoveCfContainer,
-		contract.JobTypeRemoveBuildkit,
-		contract.JobTypeRemovePodletNetwork,
-		contract.JobTypeUninstallRailpack,
+	jobTypes := []dto.JobType{
+		dto.JobTypeRemoveCfContainer,
+		dto.JobTypeRemoveBuildkit,
+		dto.JobTypeRemovePodletNetwork,
+		dto.JobTypeUninstallRailpack,
 	}
 
 	for _, jobType := range jobTypes {
@@ -70,5 +70,5 @@ func agentUninstallerPath() (string, error) {
 		dataDir = filepath.Join(homeDir, ".local", "share")
 	}
 
-	return filepath.Join(dataDir, "podlet", "uninstall-server-agent.sh"), nil
+	return filepath.Join(dataDir, "podlet", "uninstall-agent.sh"), nil
 }

@@ -27,7 +27,11 @@ podlet:
 
 
 agent:
-	go run cmd/agent/main.go $(args)
+	go build -o /tmp/podlet-agent-dev ./cmd/agent
+	sudo env \
+		XDG_CONFIG_HOME="$(HOME)/.config" \
+		XDG_DATA_HOME="/var/lib" \
+		/tmp/podlet-agent-dev $(args)
 
 
 # database related commands
