@@ -21,4 +21,5 @@ const (
 	JobTypeUninstallRailpack   JobType = "uninstall_railpack"
 	JobTypeCloneRepository     JobType = "clone_repository"
 	JobTypeBuildRepository     JobType = "build_repository"
+	JobTypeCreateDnsRecord     JobType = "create_dns_record"
 )
