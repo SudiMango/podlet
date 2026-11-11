@@ -72,6 +72,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 		r.Route("/jobs", func(r chi.Router) {
 			r.Get("/", params.JobHandler.GetAllJobsByUserId)
 			r.Get("/{jobId}", params.JobHandler.GetJobByJobIdAndUserId)
+			r.Get("/{jobId}/stream", params.JobHandler.StreamJobByJobIdAndUserId)
 			r.Get("/{serverId}/jobs", params.JobHandler.GetAllJobsByServerIdAndUserId)
 		})
 	})

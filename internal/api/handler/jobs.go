@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/SudiMango/podlet/internal/api/auth"
 	"github.com/SudiMango/podlet/internal/api/service"
@@ -200,6 +201,95 @@ func (h *JobHandler) GetJobByJobIdAndUserId(w http.ResponseWriter, r *http.Reque
 	}
 
 	util.SendJSON(w, http.StatusOK, job)
+}
+
+/*
+Stream a job's updates as server-sent events until it succeeds or fails
+
+API URL: GET /jobs/{jobId}/stream
+
+Args:
+
+	jobId: the id of the job to watch
+
+Returns:
+
+	a text/event-stream of job updates (HTTP 200). The first event is the
+	job's current state; the stream ends after a success or failed event.
+
+Raises:
+
+	400: jobId missing
+	401: unauthenticated
+	404: job not found
+	500: streaming unsupported or unable to get the job
+*/
+func (h *JobHandler) StreamJobByJobIdAndUserId(w http.ResponseWriter, r *http.Request) {
+	userId, ok := auth.CurrentUserID(r)
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	jobId := chi.URLParam(r, "jobId")
+	if jobId == "" {
+		util.SendError(w, http.StatusBadRequest, errors.New("jobId is required"))
+		return
+	}
+
+	stream, err := util.NewEventStream(w)
+	if err != nil {
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// Subscribe before reading the current state so no update is missed in between
+	updates, unsubscribe := h.jobService.SubscribeToJob(jobId)
+	defer unsubscribe()
+
+	job, err := h.jobService.GetJobByJobIdAndUserId(r.Context(), userId, jobId)
+	if err != nil {
+		if errors.Is(err, service.ErrJobNotFound) {
+			util.SendError(w, http.StatusNotFound, err)
+			return
+		}
+
+		util.SendError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	stream.Start()
+
+	// Returns true once the job has finished or the client is gone
+	send := func(j contract.JobResponse) (done bool) {
+		if err := stream.Send(j); err != nil {
+			return true
+		}
+		return j.JobStatus == contract.StatusSuccess || j.JobStatus == contract.StatusFailed
+	}
+
+	if send(*job) {
+		return
+	}
+
+	// Keepalive comment so idle connections aren't dropped by proxies
+	keepalive := time.NewTicker(15 * time.Second)
+	defer keepalive.Stop()
+
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-keepalive.C:
+			if stream.Ping() != nil {
+				return
+			}
+		case update := <-updates:
+			if send(update) {
+				return
+			}
+		}
+	}
 }
 
 /*

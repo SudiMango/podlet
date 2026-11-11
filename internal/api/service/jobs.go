@@ -30,17 +30,20 @@ type JobService struct {
 	jobRepository    *repository.JobRepository
 	serverRepository *repository.ServerRepository
 	githubService    *GithubService
+	jobObserver      *JobObserver
 }
 
 func NewJobService(
 	jobRepository *repository.JobRepository,
 	serverRepository *repository.ServerRepository,
 	githubService *GithubService,
+	jobObserver *JobObserver,
 ) *JobService {
 	return &JobService{
 		jobRepository:    jobRepository,
 		serverRepository: serverRepository,
 		githubService:    githubService,
+		jobObserver:      jobObserver,
 	}
 }
 
@@ -126,7 +129,22 @@ func (s *JobService) ReportJobByServerIdAndJobId(ctx context.Context, serverId s
 		return err
 	}
 
+	// Notify anyone watching this job
+	update := contract.JobResponse{
+		Id:        request.JobId,
+		JobStatus: request.JobStatus,
+		Step:      request.Step,
+	}
+	if request.Error != "" {
+		update.ErrorMessage = &request.Error
+	}
+	s.jobObserver.Publish(request.JobId, update)
+
 	return nil
+}
+
+func (s *JobService) SubscribeToJob(jobId string) (<-chan contract.JobResponse, func()) {
+	return s.jobObserver.Subscribe(jobId)
 }
 
 func (s *JobService) GetAllJobsByUserId(ctx context.Context, userId string, status string) (*contract.JobsResponse, error) {
