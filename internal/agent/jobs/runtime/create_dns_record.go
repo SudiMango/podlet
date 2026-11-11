@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -18,17 +19,20 @@ func NewCreateDNSRecordJob(client *client.Client) *CreateDNSRecordJob {
 }
 
 func (j *CreateDNSRecordJob) Execute(ctx context.Context, job *contract.ClaimJobResponse) error {
+	var payload contract.CloneRepositoryJob
+	if err := json.Unmarshal(job.Payload, &payload); err != nil {
+		return fmt.Errorf("create DNS record: decode payload: %w", err)
+	}
+
 	var tunnel contract.TunnelResponse
 	if err := j.client.DoJSON(ctx, http.MethodGet, "/agent/cftunnel", nil, &tunnel); err != nil {
 		return fmt.Errorf("create DNS record: get Cloudflare tunnel: %w", err)
 	}
 
-	request := struct {
-		TunnelID string `json:"tunnel_id"`
-		Service  string `json:"service"`
-	}{
-		TunnelID: tunnel.Id,
-		Service:  "http://" + job.Id + ":3000",
+	request := contract.CreateDnsRecordRequest{
+		TunnelId:     tunnel.Id,
+		Service:      "http://" + job.Id + ":3000",
+		RepositoryId: payload.RepositoryId,
 	}
 
 	var record contract.DnsRecordResponse

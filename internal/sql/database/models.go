@@ -112,13 +112,15 @@ type Account struct {
 }
 
 type DnsRecord struct {
-	ID        string
-	Name      string
-	Service   string
-	UserID    pgtype.UUID
-	ServerID  string
-	TunnelID  string
-	CreatedAt pgtype.Timestamptz
+	ID           string
+	Name         string
+	Service      string
+	UserID       pgtype.UUID
+	ServerID     string
+	TunnelID     string
+	CreatedAt    pgtype.Timestamptz
+	RepositoryID int64
+	UpdatedAt    pgtype.Timestamptz
 }
 
 type GithubInstallation struct {

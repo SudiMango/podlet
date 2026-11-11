@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
+	"time"
 
-	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/contract"
 	db "github.com/SudiMango/podlet/internal/sql/database"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -81,7 +81,7 @@ func (r *CloudflareRepository) GetTunnelByUserIdAndServerId(ctx context.Context,
 	DNS Records
 */
 
-func (r *CloudflareRepository) CreateDNSRecord(ctx context.Context, userId string, serverId string, request dto.CreateDNSRecordRequest) (*contract.DnsRecordResponse, error) {
+func (r *CloudflareRepository) CreateDNSRecord(ctx context.Context, userId string, serverId string, request contract.CreateDnsRecordRequest) (*contract.DnsRecordResponse, error) {
 	var pgUserId pgtype.UUID
 
 	if err := pgUserId.Scan(userId); err != nil {
@@ -89,12 +89,13 @@ func (r *CloudflareRepository) CreateDNSRecord(ctx context.Context, userId strin
 	}
 
 	result, err := r.store.CreateDnsRecord(ctx, db.CreateDnsRecordParams{
-		ID:       request.DnsRecordId,
-		Name:     request.Hostname,
-		Service:  request.Service,
-		UserID:   pgUserId,
-		ServerID: serverId,
-		TunnelID: request.TunnelId,
+		ID:           request.DnsRecordId,
+		Name:         request.Hostname,
+		Service:      request.Service,
+		UserID:       pgUserId,
+		ServerID:     serverId,
+		TunnelID:     request.TunnelId,
+		RepositoryID: request.RepositoryId,
 		CreatedAt: pgtype.Timestamptz{
 			Time:  request.CreatedAt,
 			Valid: true,
@@ -113,4 +114,43 @@ func (r *CloudflareRepository) CreateDNSRecord(ctx context.Context, userId strin
 		TunnelId:  result.TunnelID,
 		CreatedAt: request.CreatedAt,
 	}, nil
+}
+
+func (r *CloudflareRepository) GetDNSRecordByServerIdAndRepositoryId(ctx context.Context, userId string, serverId string, repositoryId int64) (*contract.DnsRecordResponse, error) {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return nil, err
+	}
+
+	result, err := r.store.GetDnsRecordByServerIdAndRepositoryId(ctx, db.GetDnsRecordByServerIdAndRepositoryIdParams{
+		UserID:       pgUserId,
+		ServerID:     serverId,
+		RepositoryID: repositoryId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract.DnsRecordResponse{
+		Id:        result.ID,
+		Name:      result.Name,
+		Service:   result.Service,
+		UserId:    result.UserID.String(),
+		ServerId:  result.ServerID,
+		TunnelId:  result.TunnelID,
+		CreatedAt: result.CreatedAt.Time,
+	}, nil
+}
+
+func (r *CloudflareRepository) UpdateDNSRecordService(ctx context.Context, dnsRecordId string, service string) error {
+	_, err := r.store.UpdateDnsRecordService(ctx, db.UpdateDnsRecordServiceParams{
+		ID:      dnsRecordId,
+		Service: service,
+		UpdatedAt: pgtype.Timestamptz{
+			Time:  time.Now(),
+			Valid: true,
+		},
+	})
+	return err
 }

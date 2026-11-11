@@ -40,9 +40,24 @@ INSERT INTO dns_records (
     user_id,
     server_id,
     tunnel_id,
+    repository_id,
     created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING *;
+
+-- name: GetDnsRecordByServerIdAndRepositoryId :one
+SELECT * FROM dns_records
+WHERE user_id = $1
+    AND server_id = $2
+    AND repository_id = $3;
+
+-- name: UpdateDnsRecordService :one
+UPDATE dns_records
+SET 
+    service = $2,
+    updated_at = $3
+WHERE id = $1
 RETURNING *;
 
 -- name: GetDnsRecordsByUserId :many

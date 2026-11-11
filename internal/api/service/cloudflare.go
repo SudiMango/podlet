@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/SudiMango/podlet/internal/api/cloudflare"
-	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/api/repository"
 	"github.com/SudiMango/podlet/internal/contract"
 	"github.com/jackc/pgx/v5"
@@ -78,8 +77,62 @@ func (s *CloudflareService) GetTunnelByUserIdAndServerId(ctx context.Context, us
 	DNS Records
 */
 
-func (s *CloudflareService) CreateDNSRecord(ctx context.Context, userId string, serverId string, request dto.CreateDNSRecordRequest) (*contract.DnsRecordResponse, error) {
+func (s *CloudflareService) CreateDNSRecord(ctx context.Context, userId string, serverId string, request contract.CreateDnsRecordRequest) (*contract.DnsRecordResponse, error) {
+	// Repoint dns record if it already exists
+	existing, err := s.cloudflareRepository.GetDNSRecordByServerIdAndRepositoryId(ctx, userId, serverId, request.RepositoryId)
+	if err == nil {
+		return s.repointDnsRecord(ctx, existing, request)
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
 
+	// Create new dns record if it doesn't exist
+	return s.createNewDnsRecord(ctx, userId, serverId, request)
+}
+
+/*
+	Private functions
+*/
+
+func (s *CloudflareService) repointDnsRecord(ctx context.Context, record *contract.DnsRecordResponse, request contract.CreateDnsRecordRequest) (*contract.DnsRecordResponse, error) {
+	// Get current ingress rules for the tunnel
+	configs, err := s.cloudflareClient.GetIngressConfigs(ctx, record.TunnelId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Point the existing hostname's rule at the new service
+	for i := range configs.Config.Ingress {
+		rule := &configs.Config.Ingress[i]
+		if rule.Hostname != nil && *rule.Hostname == record.Name {
+			rule.Service = request.Service
+			break
+		}
+	}
+
+	// Push updated ingress rules to cf
+	_, err = s.cloudflareClient.UpdateIngressConfig(
+		ctx,
+		record.TunnelId,
+		cloudflare.PutIngressRequest{
+			Config: configs.Config,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update db reference with the new service
+	if err := s.cloudflareRepository.UpdateDNSRecordService(ctx, record.Id, request.Service); err != nil {
+		return nil, err
+	}
+	record.Service = request.Service
+
+	return record, nil
+}
+
+func (s *CloudflareService) createNewDnsRecord(ctx context.Context, userId string, serverId string, request contract.CreateDnsRecordRequest) (*contract.DnsRecordResponse, error) {
 	// Create dns record from cf side
 	cfResult, err := s.cloudflareClient.CreateDNSRecord(ctx, request.TunnelId)
 	if err != nil {
