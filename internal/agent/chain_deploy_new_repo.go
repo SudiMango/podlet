@@ -11,10 +11,10 @@ type DeployNewRepositoryChain struct{}
 
 func (DeployNewRepositoryChain) Execute(ctx context.Context, a *Agent, job *contract.ClaimJobResponse) error {
 	steps := []dto.ChainStep{
-		{Name: "Cloning repository", JobType: dto.JobTypeCloneRepository},
-		{Name: "Building image", JobType: dto.JobTypeBuildRepository},
-		{Name: "Creating DNS record", JobType: dto.JobTypeCreateDnsRecord},
-		{Name: "Removing previous deploy", JobType: dto.JobTypeRemovePrevDeploy},
+		{Name: contract.StepCloneRepository, JobType: dto.JobTypeCloneRepository},
+		{Name: contract.StepBuildImage, JobType: dto.JobTypeBuildRepository},
+		{Name: contract.StepCreateDnsRecord, JobType: dto.JobTypeCreateDnsRecord},
+		{Name: contract.StepRemovePrevDeploy, JobType: dto.JobTypeRemovePrevDeploy},
 	}
 
 	for _, s := range steps {

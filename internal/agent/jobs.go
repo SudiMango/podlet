@@ -136,7 +136,7 @@ func (a *Agent) reportJobSucceeded(ctx context.Context, jobId string) error {
 	})
 }
 
-func (a *Agent) reportStep(ctx context.Context, jobId string, step string) {
+func (a *Agent) reportStep(ctx context.Context, jobId string, step contract.ChainStep) {
 	if err := a.reportJob(ctx, contract.ReportJobRequest{
 		JobId:     jobId,
 		JobStatus: contract.StatusOngoing,

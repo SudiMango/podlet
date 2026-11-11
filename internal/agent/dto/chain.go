@@ -1,6 +1,8 @@
 package dto
 
+import "github.com/SudiMango/podlet/internal/contract"
+
 type ChainStep struct {
-	Name    string
+	Name    contract.ChainStep
 	JobType JobType
 }

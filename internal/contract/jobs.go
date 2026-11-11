@@ -11,7 +11,7 @@ type ReportJobRequest struct {
 	JobId     string    `json:"job_id"`
 	JobStatus JobStatus `json:"job_status"`
 	Error     string    `json:"error"`
-	Step      string    `json:"step,omitempty"`
+	Step      ChainStep `json:"step,omitempty"`
 }
 
 // Response
@@ -27,7 +27,7 @@ type JobResponse struct {
 	ServerId     string    `json:"server_id"`
 	JobStatus    JobStatus `json:"job_status"`
 	ErrorMessage *string   `json:"error,omitempty"`
-	Step         string    `json:"step,omitempty"`
+	Step         ChainStep `json:"step,omitempty"`
 	JobType      JobType   `json:"job_type"`
 	RepoName     string    `json:"repo_name"`
 	CreatedAt    time.Time `json:"created_at"`
