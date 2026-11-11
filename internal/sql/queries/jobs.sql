@@ -28,12 +28,13 @@ SET
         WHEN sqlc.arg(job_status)::server_job_status = 'failed' THEN sqlc.narg(error_message)
         ELSE NULL::TEXT
     END,
+    step = COALESCE(sqlc.narg(step)::TEXT, step),
     updated_at = now()
 WHERE id = sqlc.arg(id)
   AND server_id = sqlc.arg(server_id)
   AND (
     (job_status = 'pending' AND sqlc.arg(job_status)::server_job_status = 'ongoing')
-    OR (job_status = 'ongoing' AND sqlc.arg(job_status)::server_job_status IN ('success', 'failed'))
+    OR (job_status = 'ongoing' AND sqlc.arg(job_status)::server_job_status IN ('ongoing', 'success', 'failed'))
   );
 
 -- name: GetAllJobsByUserId :many
