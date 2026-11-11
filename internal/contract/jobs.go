@@ -37,6 +37,8 @@ type JobsResponse []JobResponse
 // Job payload structures
 
 type CloneRepositoryJob struct {
-	CloneUrl    string `json:"clone_url"`
-	GithubToken string `json:"github_token"`
+	RepoName     string `json:"repo_name"`
+	RepositoryId int64  `json:"repository_id"`
+	CloneUrl     string `json:"clone_url"`
+	GithubToken  string `json:"github_token"`
 }

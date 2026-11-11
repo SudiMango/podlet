@@ -19,8 +19,8 @@ func (SetupBuildkitJob) Execute(ctx context.Context, job *contract.ClaimJobRespo
 		"--name", "podlet-buildkit",
 		"--privileged",
 		"--restart", "unless-stopped",
-		"--label", "dev.podlet.managed=true",
-		"--label", "dev.podlet.component=buildkit",
+		"--label", "podlet.managed=true",
+		"--label", "podlet.component=buildkit",
 		"moby/buildkit:latest",
 	).CombinedOutput()
 	if err != nil {

@@ -44,6 +44,7 @@ func JobRegistry(c *client.Client, cfg *config.Config) map[dto.JobType]JobExecut
 		dto.JobTypeCloneRepository:     runtimejobs.CloneRepositoryJob{},
 		dto.JobTypeBuildRepository:     runtimejobs.BuildRepositoryJob{},
 		dto.JobTypeCreateDnsRecord:     runtimejobs.NewCreateDNSRecordJob(c),
+		dto.JobTypeRemovePrevDeploy:    runtimejobs.RemovePrevDeploy{},
 	}
 }
 

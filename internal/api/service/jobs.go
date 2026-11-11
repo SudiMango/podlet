@@ -195,8 +195,10 @@ func (s *JobService) prepareJobPayload(ctx context.Context, job *dto.JobResponse
 		}
 
 		return json.Marshal(contract.CloneRepositoryJob{
-			CloneUrl:    "https://github.com/" + job.RepoName + ".git",
-			GithubToken: token,
+			RepoName:     job.RepoName,
+			RepositoryId: job.RepositoryId,
+			CloneUrl:     "https://github.com/" + job.RepoName + ".git",
+			GithubToken:  token,
 		})
 
 	default:

@@ -25,5 +25,10 @@ func (DeployNewRepositoryChain) Execute(ctx context.Context, a *Agent, job *cont
 		return err
 	}
 
+	e = a.executors[dto.JobTypeRemovePrevDeploy]
+	if err := e.Execute(ctx, job); err != nil {
+		return err
+	}
+
 	return nil
 }

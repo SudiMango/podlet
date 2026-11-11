@@ -22,4 +22,5 @@ const (
 	JobTypeCloneRepository     JobType = "clone_repository"
 	JobTypeBuildRepository     JobType = "build_repository"
 	JobTypeCreateDnsRecord     JobType = "create_dns_record"
+	JobTypeRemovePrevDeploy    JobType = "remove_prev_deploy"
 )
