@@ -138,6 +138,37 @@ func (q *Queries) GetDnsRecordByIdAndUserId(ctx context.Context, arg GetDnsRecor
 	return i, err
 }
 
+const getDnsRecordByJobIdAndUserId = `-- name: GetDnsRecordByJobIdAndUserId :one
+SELECT d.id, d.name, d.service, d.user_id, d.server_id, d.tunnel_id, d.created_at, d.repository_id, d.updated_at FROM dns_records d
+JOIN server_agent_jobs j
+    ON j.server_id = d.server_id
+    AND j.repository_id = d.repository_id
+WHERE j.id = $1
+    AND j.user_id = $2
+`
+
+type GetDnsRecordByJobIdAndUserIdParams struct {
+	ID     string
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetDnsRecordByJobIdAndUserId(ctx context.Context, arg GetDnsRecordByJobIdAndUserIdParams) (DnsRecord, error) {
+	row := q.db.QueryRow(ctx, getDnsRecordByJobIdAndUserId, arg.ID, arg.UserID)
+	var i DnsRecord
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Service,
+		&i.UserID,
+		&i.ServerID,
+		&i.TunnelID,
+		&i.CreatedAt,
+		&i.RepositoryID,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getDnsRecordByServerIdAndRepositoryId = `-- name: GetDnsRecordByServerIdAndRepositoryId :one
 SELECT id, name, service, user_id, server_id, tunnel_id, created_at, repository_id, updated_at FROM dns_records
 WHERE user_id = $1

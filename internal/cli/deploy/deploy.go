@@ -149,7 +149,21 @@ func watchJob(cmd *cobra.Command, api *client.Client, token string, jobId string
 		return fmt.Errorf("connection closed before the job finished; check it with `podlet jobs get %s`", jobId)
 	}
 
+	if view.finished {
+		printLink(cmd, api, token, jobId)
+	}
+
 	return nil
+}
+
+func printLink(cmd *cobra.Command, api *client.Client, token string, jobId string) {
+	var record contract.DnsRecordResponse
+	if _, err := api.DoJSON(cmd.Context(), http.MethodGet, "/jobs/"+jobId+"/deployment", nil, &record, token); err != nil {
+		fmt.Fprintln(cmd.OutOrStdout(), pterm.FgGray.Sprint("\nCouldn't look up the deployment link: "+err.Error()))
+		return
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "\nYour deployment is live: https://%s\n", record.Name)
 }
 
 func (v *jobView) label(i int) string {

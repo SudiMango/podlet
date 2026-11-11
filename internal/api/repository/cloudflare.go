@@ -143,6 +143,32 @@ func (r *CloudflareRepository) GetDNSRecordByServerIdAndRepositoryId(ctx context
 	}, nil
 }
 
+func (r *CloudflareRepository) GetDNSRecordByJobIdAndUserId(ctx context.Context, userId string, jobId string) (*contract.DnsRecordResponse, error) {
+	var pgUserId pgtype.UUID
+
+	if err := pgUserId.Scan(userId); err != nil {
+		return nil, err
+	}
+
+	result, err := r.store.GetDnsRecordByJobIdAndUserId(ctx, db.GetDnsRecordByJobIdAndUserIdParams{
+		ID:     jobId,
+		UserID: pgUserId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract.DnsRecordResponse{
+		Id:        result.ID,
+		Name:      result.Name,
+		Service:   result.Service,
+		UserId:    result.UserID.String(),
+		ServerId:  result.ServerID,
+		TunnelId:  result.TunnelID,
+		CreatedAt: result.CreatedAt.Time,
+	}, nil
+}
+
 func (r *CloudflareRepository) UpdateDNSRecordService(ctx context.Context, dnsRecordId string, service string) error {
 	_, err := r.store.UpdateDnsRecordService(ctx, db.UpdateDnsRecordServiceParams{
 		ID:      dnsRecordId,
