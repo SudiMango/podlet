@@ -143,8 +143,16 @@ func (s *JobService) ReportJobByServerIdAndJobId(ctx context.Context, serverId s
 	return nil
 }
 
-func (s *JobService) SubscribeToJob(jobId string) (<-chan contract.JobResponse, func()) {
-	return s.jobObserver.Subscribe(jobId)
+func (s *JobService) WatchJob(ctx context.Context, userId string, jobId string) (*contract.JobResponse, <-chan contract.JobResponse, func(), error) {
+	updates, unsubscribe := s.jobObserver.Subscribe(jobId)
+
+	job, err := s.GetJobByJobIdAndUserId(ctx, userId, jobId)
+	if err != nil {
+		unsubscribe()
+		return nil, nil, nil, err
+	}
+
+	return job, updates, unsubscribe, nil
 }
 
 func (s *JobService) GetAllJobsByUserId(ctx context.Context, userId string, status string) (*contract.JobsResponse, error) {

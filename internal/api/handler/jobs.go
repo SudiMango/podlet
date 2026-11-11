@@ -243,11 +243,7 @@ func (h *JobHandler) StreamJobByJobIdAndUserId(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Subscribe before reading the current state so no update is missed in between
-	updates, unsubscribe := h.jobService.SubscribeToJob(jobId)
-	defer unsubscribe()
-
-	job, err := h.jobService.GetJobByJobIdAndUserId(r.Context(), userId, jobId)
+	job, updates, unsubscribe, err := h.jobService.WatchJob(r.Context(), userId, jobId)
 	if err != nil {
 		if errors.Is(err, service.ErrJobNotFound) {
 			util.SendError(w, http.StatusNotFound, err)
@@ -257,6 +253,7 @@ func (h *JobHandler) StreamJobByJobIdAndUserId(w http.ResponseWriter, r *http.Re
 		util.SendError(w, http.StatusInternalServerError, err)
 		return
 	}
+	defer unsubscribe()
 
 	stream.Start()
 
