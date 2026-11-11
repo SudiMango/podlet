@@ -3,12 +3,9 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"text/tabwriter"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
 )
 
@@ -48,14 +45,8 @@ func (UpdateServerCommand) Command() *cobra.Command {
 }
 
 func updateRegisteredServer(cmd *cobra.Command, serverId string, request contract.UpdateServerRequest) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Update server
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -74,15 +65,14 @@ func updateRegisteredServer(cmd *cobra.Command, serverId string, request contrac
 
 	// Print server to console
 	out := cmd.OutOrStdout()
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(out, "Server updated successfully!")
 
-	fmt.Fprintln(w, "Server updated successfully!")
-	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
-	fmt.Fprintf(w, "Name:\t%s\n", response.Name)
-	fmt.Fprintf(w, "Lifecycle State:\t%s\n", response.LifecycleState)
-	fmt.Fprintf(w, "Last Seen At:\t%s\n", util.FormatLastSeenAt(response.LastSeenAt))
-	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
-	fmt.Fprintf(w, "Updated At:\t%s\n", response.UpdatedAt.Local().Format("2006-01-02 15:04"))
-
-	return w.Flush()
+	return util.PrintFields(out,
+		"ID", response.Id,
+		"Name", response.Name,
+		"Lifecycle State", string(response.LifecycleState),
+		"Last Seen At", util.FormatLastSeenAt(response.LastSeenAt),
+		"Created At", util.FormatTime(response.CreatedAt),
+		"Updated At", util.FormatTime(response.UpdatedAt),
+	)
 }

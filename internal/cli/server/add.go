@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
 )
 
@@ -28,14 +27,8 @@ func (AddServerCommand) Command() *cobra.Command {
 }
 
 func registerPendingServer(cmd *cobra.Command) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Create pending server
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}

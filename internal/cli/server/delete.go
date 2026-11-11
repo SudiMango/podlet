@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
-	"github.com/SudiMango/podlet/internal/keyring"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/spf13/cobra"
 )
 
@@ -35,14 +34,8 @@ func (DeleteServerCommand) Command() *cobra.Command {
 }
 
 func deleteServer(cmd *cobra.Command, serverId string, pending bool) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Delete server
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}

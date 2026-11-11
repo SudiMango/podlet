@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Never commit or push on your own; the user handles all git commits and pushes. Only do so when explicitly told to.
 
+## Comments
+
+Don't add function-level comments (doc comments above functions or types), except for HTTP handlers. Only add a comment above a particular piece of code when it's relevant, such as explaining a non-obvious why.
+
 ## Overview
 
 Podlet is a self-hosted deploy platform written in Go (module `github.com/SudiMango/podlet`). Three binaries share one module:

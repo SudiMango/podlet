@@ -12,7 +12,6 @@ import (
 	"github.com/SudiMango/podlet/internal/cli/client"
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
@@ -37,12 +36,7 @@ func (DeployCommand) Command() *cobra.Command {
 }
 
 func deploy(cmd *cobra.Command, detach bool) error {
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w; run `podlet auth login`", err)
-	}
-
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}

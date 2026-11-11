@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
 )
 
@@ -32,14 +31,8 @@ func (MeCommand) Command() *cobra.Command {
 }
 
 func getCurrentProfile(ctx context.Context) (*contract.PodletProfileResponse, error) {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return nil, fmt.Errorf("load session token: %w; run `podlet auth login`", err)
-	}
-
 	// Fetch current user
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return nil, err
 	}

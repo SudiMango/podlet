@@ -3,12 +3,9 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"text/tabwriter"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
 )
 
@@ -50,14 +47,8 @@ func (GetServerCommand) Command() *cobra.Command {
 }
 
 func getRegisteredServers(cmd *cobra.Command) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Get servers
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -81,33 +72,24 @@ func getRegisteredServers(cmd *cobra.Command) error {
 		return nil
 	}
 
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
-
-	fmt.Fprintln(w, "ID\tNAME\tLIFECYCLE STATE\tLAST SEEN AT\tCREATED AT\tUPDATED AT")
-
-	for _, server := range response {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+	rows := make([][]string, len(response))
+	for i, server := range response {
+		rows[i] = []string{
 			server.Id,
 			server.Name,
-			server.LifecycleState,
+			string(server.LifecycleState),
 			util.FormatLastSeenAt(server.LastSeenAt),
-			server.CreatedAt.Local().Format("2006-01-02 15:04"),
-			server.UpdatedAt.Local().Format("2006-01-02 15:04"),
-		)
+			util.FormatTime(server.CreatedAt),
+			util.FormatTime(server.UpdatedAt),
+		}
 	}
 
-	return w.Flush()
+	return util.PrintTable(out, []string{"ID", "NAME", "LIFECYCLE STATE", "LAST SEEN AT", "CREATED AT", "UPDATED AT"}, rows)
 }
 
 func getRegisteredServer(cmd *cobra.Command, serverId string) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Get server
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -126,27 +108,19 @@ func getRegisteredServer(cmd *cobra.Command, serverId string) error {
 
 	// Print server to console
 	out := cmd.OutOrStdout()
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
-
-	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
-	fmt.Fprintf(w, "Name:\t%s\n", response.Name)
-	fmt.Fprintf(w, "Lifecycle State:\t%s\n", response.LifecycleState)
-	fmt.Fprintf(w, "Last Seen At:\t%s\n", util.FormatLastSeenAt(response.LastSeenAt))
-	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
-	fmt.Fprintf(w, "Updated At:\t%s\n", response.UpdatedAt.Local().Format("2006-01-02 15:04"))
-
-	return w.Flush()
+	return util.PrintFields(out,
+		"ID", response.Id,
+		"Name", response.Name,
+		"Lifecycle State", string(response.LifecycleState),
+		"Last Seen At", util.FormatLastSeenAt(response.LastSeenAt),
+		"Created At", util.FormatTime(response.CreatedAt),
+		"Updated At", util.FormatTime(response.UpdatedAt),
+	)
 }
 
 func getPendingServers(cmd *cobra.Command) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Get servers
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -170,30 +144,17 @@ func getPendingServers(cmd *cobra.Command) error {
 		return nil
 	}
 
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
-
-	fmt.Fprintln(w, "ID\tCREATED AT\tEXPIRES AT")
-
-	for _, server := range response {
-		fmt.Fprintf(w, "%s\t%s\t%s\n",
-			server.Id,
-			server.CreatedAt.Local().Format("2006-01-02 15:04"),
-			server.ExpiresAt.Local().Format("2006-01-02 15:04"),
-		)
+	rows := make([][]string, len(response))
+	for i, server := range response {
+		rows[i] = []string{server.Id, util.FormatTime(server.CreatedAt), util.FormatTime(server.ExpiresAt)}
 	}
 
-	return w.Flush()
+	return util.PrintTable(out, []string{"ID", "CREATED AT", "EXPIRES AT"}, rows)
 }
 
 func getPendingServer(cmd *cobra.Command, serverId string) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Get server
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -212,11 +173,9 @@ func getPendingServer(cmd *cobra.Command, serverId string) error {
 
 	// Print server to console
 	out := cmd.OutOrStdout()
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
-
-	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
-	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
-	fmt.Fprintf(w, "Expires At:\t%s\n", response.ExpiresAt.Local().Format("2006-01-02 15:04"))
-
-	return w.Flush()
+	return util.PrintFields(out,
+		"ID", response.Id,
+		"Created At", util.FormatTime(response.CreatedAt),
+		"Expires At", util.FormatTime(response.ExpiresAt),
+	)
 }
