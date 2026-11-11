@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/SudiMango/podlet/internal/api/auth"
-	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/api/service"
 	"github.com/SudiMango/podlet/internal/api/util"
+	"github.com/SudiMango/podlet/internal/contract"
 )
 
 type CloudflareHandler struct {
@@ -130,7 +130,7 @@ func (h *CloudflareHandler) CreateDNSRecord(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var request dto.CreateDNSRecordRequest
+	var request contract.CreateDnsRecordRequest
 	if err := util.DecodeJSON(r, &request); err != nil {
 		util.SendError(w, http.StatusBadRequest, errors.New("Invalid request body"))
 		return

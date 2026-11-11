@@ -23,20 +23,22 @@ INSERT INTO dns_records (
     user_id,
     server_id,
     tunnel_id,
+    repository_id,
     created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, name, service, user_id, server_id, tunnel_id, created_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, name, service, user_id, server_id, tunnel_id, created_at, repository_id, updated_at
 `
 
 type CreateDnsRecordParams struct {
-	ID        string
-	Name      string
-	Service   string
-	UserID    pgtype.UUID
-	ServerID  string
-	TunnelID  string
-	CreatedAt pgtype.Timestamptz
+	ID           string
+	Name         string
+	Service      string
+	UserID       pgtype.UUID
+	ServerID     string
+	TunnelID     string
+	RepositoryID int64
+	CreatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) CreateDnsRecord(ctx context.Context, arg CreateDnsRecordParams) (DnsRecord, error) {
@@ -47,6 +49,7 @@ func (q *Queries) CreateDnsRecord(ctx context.Context, arg CreateDnsRecordParams
 		arg.UserID,
 		arg.ServerID,
 		arg.TunnelID,
+		arg.RepositoryID,
 		arg.CreatedAt,
 	)
 	var i DnsRecord
@@ -58,6 +61,8 @@ func (q *Queries) CreateDnsRecord(ctx context.Context, arg CreateDnsRecordParams
 		&i.ServerID,
 		&i.TunnelID,
 		&i.CreatedAt,
+		&i.RepositoryID,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -106,7 +111,7 @@ func (q *Queries) CreateTunnel(ctx context.Context, arg CreateTunnelParams) (Tun
 }
 
 const getDnsRecordByIdAndUserId = `-- name: GetDnsRecordByIdAndUserId :one
-SELECT id, name, service, user_id, server_id, tunnel_id, created_at FROM dns_records
+SELECT id, name, service, user_id, server_id, tunnel_id, created_at, repository_id, updated_at FROM dns_records
 WHERE id = $1
     AND user_id = $2
 `
@@ -127,12 +132,44 @@ func (q *Queries) GetDnsRecordByIdAndUserId(ctx context.Context, arg GetDnsRecor
 		&i.ServerID,
 		&i.TunnelID,
 		&i.CreatedAt,
+		&i.RepositoryID,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getDnsRecordByServerIdAndRepositoryId = `-- name: GetDnsRecordByServerIdAndRepositoryId :one
+SELECT id, name, service, user_id, server_id, tunnel_id, created_at, repository_id, updated_at FROM dns_records
+WHERE user_id = $1
+    AND server_id = $2
+    AND repository_id = $3
+`
+
+type GetDnsRecordByServerIdAndRepositoryIdParams struct {
+	UserID       pgtype.UUID
+	ServerID     string
+	RepositoryID int64
+}
+
+func (q *Queries) GetDnsRecordByServerIdAndRepositoryId(ctx context.Context, arg GetDnsRecordByServerIdAndRepositoryIdParams) (DnsRecord, error) {
+	row := q.db.QueryRow(ctx, getDnsRecordByServerIdAndRepositoryId, arg.UserID, arg.ServerID, arg.RepositoryID)
+	var i DnsRecord
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Service,
+		&i.UserID,
+		&i.ServerID,
+		&i.TunnelID,
+		&i.CreatedAt,
+		&i.RepositoryID,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getDnsRecordsByUserId = `-- name: GetDnsRecordsByUserId :many
-SELECT id, name, service, user_id, server_id, tunnel_id, created_at FROM dns_records
+SELECT id, name, service, user_id, server_id, tunnel_id, created_at, repository_id, updated_at FROM dns_records
 WHERE user_id = $1
 ORDER BY created_at DESC
 `
@@ -154,6 +191,8 @@ func (q *Queries) GetDnsRecordsByUserId(ctx context.Context, userID pgtype.UUID)
 			&i.ServerID,
 			&i.TunnelID,
 			&i.CreatedAt,
+			&i.RepositoryID,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -166,7 +205,7 @@ func (q *Queries) GetDnsRecordsByUserId(ctx context.Context, userID pgtype.UUID)
 }
 
 const getDnsRecordsByUserIdAndTunnelId = `-- name: GetDnsRecordsByUserIdAndTunnelId :many
-SELECT id, name, service, user_id, server_id, tunnel_id, created_at FROM dns_records
+SELECT id, name, service, user_id, server_id, tunnel_id, created_at, repository_id, updated_at FROM dns_records
 WHERE user_id = $1
     AND tunnel_id = $2
 ORDER BY created_at DESC
@@ -194,6 +233,8 @@ func (q *Queries) GetDnsRecordsByUserIdAndTunnelId(ctx context.Context, arg GetD
 			&i.ServerID,
 			&i.TunnelID,
 			&i.CreatedAt,
+			&i.RepositoryID,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -283,4 +324,36 @@ func (q *Queries) GetTunnelsByUserId(ctx context.Context, userID pgtype.UUID) ([
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateDnsRecordService = `-- name: UpdateDnsRecordService :one
+UPDATE dns_records
+SET 
+    service = $2,
+    updated_at = $3
+WHERE id = $1
+RETURNING id, name, service, user_id, server_id, tunnel_id, created_at, repository_id, updated_at
+`
+
+type UpdateDnsRecordServiceParams struct {
+	ID        string
+	Service   string
+	UpdatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) UpdateDnsRecordService(ctx context.Context, arg UpdateDnsRecordServiceParams) (DnsRecord, error) {
+	row := q.db.QueryRow(ctx, updateDnsRecordService, arg.ID, arg.Service, arg.UpdatedAt)
+	var i DnsRecord
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Service,
+		&i.UserID,
+		&i.ServerID,
+		&i.TunnelID,
+		&i.CreatedAt,
+		&i.RepositoryID,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

@@ -9,11 +9,12 @@ import (
 
 	"github.com/SudiMango/podlet/internal/agent/client"
 	"github.com/SudiMango/podlet/internal/agent/config"
+	"github.com/SudiMango/podlet/internal/agent/dto"
 	"github.com/SudiMango/podlet/internal/contract"
 )
 
 const (
-	agentPollingInterval time.Duration = 30 * time.Second
+	agentPollingInterval time.Duration = 5 * time.Second
 )
 
 type Agent struct {
@@ -22,7 +23,8 @@ type Agent struct {
 	busy               atomic.Bool
 	uninstallRequested atomic.Bool
 	jobFinished        chan struct{}
-	executors          map[contract.JobType]JobExecutor
+	executors          map[dto.JobType]JobExecutor
+	chains             map[contract.JobType]JobChain
 }
 
 func New() (*Agent, error) {
@@ -38,6 +40,7 @@ func New() (*Agent, error) {
 		client:      client,
 		jobFinished: make(chan struct{}, 1),
 		executors:   JobRegistry(client, agentConfig),
+		chains:      ChainRegistry(),
 	}, nil
 }
 

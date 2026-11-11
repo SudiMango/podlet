@@ -29,7 +29,7 @@ type CreatePendingJobForServerParams struct {
 	ID             string
 	UserID         pgtype.UUID
 	ServerID       string
-	JobType        ServerJobType
+	JobType        string
 	RepoName       string
 	RepositoryID   int64
 	InstallationID int64

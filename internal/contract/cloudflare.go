@@ -4,6 +4,15 @@ import "time"
 
 // Request
 
+type CreateDnsRecordRequest struct {
+	TunnelId     string    `json:"tunnel_id"`
+	Service      string    `json:"service"`
+	RepositoryId int64     `json:"repository_id"`
+	DnsRecordId  string    `json:"-"`
+	Hostname     string    `json:"-"`
+	CreatedAt    time.Time `json:"-"`
+}
+
 // Response
 
 type CreateTunnelResponse struct {

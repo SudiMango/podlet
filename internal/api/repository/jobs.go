@@ -31,7 +31,7 @@ func (r *JobRepository) CreatePendingJobForServer(ctx context.Context, userId st
 		ID:             request.JobId,
 		UserID:         pgUserId,
 		ServerID:       request.ServerId,
-		JobType:        db.ServerJobType(request.JobType),
+		JobType:        string(request.JobType),
 		RepoName:       request.RepoName,
 		RepositoryID:   request.RepositoryId,
 		InstallationID: request.InstallationId,
