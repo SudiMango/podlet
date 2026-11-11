@@ -5,6 +5,7 @@ import (
 	"os"
 
 	authcmd "github.com/SudiMango/podlet/internal/cli/auth"
+	deploycmd "github.com/SudiMango/podlet/internal/cli/deploy"
 	jobcmd "github.com/SudiMango/podlet/internal/cli/job"
 	reposcmd "github.com/SudiMango/podlet/internal/cli/repos"
 	servercmd "github.com/SudiMango/podlet/internal/cli/server"
@@ -36,6 +37,7 @@ func (RootCommand) Command() *cobra.Command {
 		servercmd.ServerCommand{}.Command(),
 		reposcmd.ReposCommand{}.Command(),
 		jobcmd.JobCommand{}.Command(),
+		deploycmd.DeployCommand{}.Command(),
 	)
 
 	return cmd
