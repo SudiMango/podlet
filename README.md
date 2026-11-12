@@ -139,7 +139,7 @@ frontend/            landing page
 - Hosted Postgres databases
 - Environment variables
 - Logs and metrics
-- Redeploy and delete-deployment commands
+- Deploy rollbacks
 
 <br>
 
