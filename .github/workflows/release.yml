@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       prerelease:
-        description: Test release. Marks it as a pre-release on GitHub and leaves the install scripts on R2 pointing at the current stable version.
+        description: Mark the GitHub release as a pre-release. It is still uploaded to R2 and becomes what the install command downloads.
         required: false
         type: boolean
         default: false
@@ -144,9 +144,7 @@ jobs:
             "${flags[@]}"
 
       - name: Point the install scripts at this version
-        if: ${{ inputs.prerelease != true }}
         run: |
-          aws s3 cp dist/cli/install.sh "s3://${R2_BUCKET}/cli/install.sh" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
-          aws s3 cp dist/cli/uninstall-cli.sh "s3://${R2_BUCKET}/cli/uninstall-cli.sh" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
-          aws s3 cp dist/agent/install.sh "s3://${R2_BUCKET}/agent/install.sh" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
-          aws s3 cp dist/agent/uninstall-agent.sh "s3://${R2_BUCKET}/agent/uninstall-agent.sh" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
+          for script in cli/install.sh cli/uninstall-cli.sh agent/install.sh agent/uninstall-agent.sh; do
+            aws s3 cp "dist/${script}" "s3://${R2_BUCKET}/${script}" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
+          done
