@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version tag, for example v0.2.0
+        required: true
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  VERSION: ${{ inputs.version }}
+
+jobs:
+  build:
+    name: Build release artifacts
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Validate version
+        run: |
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must look like v1.2.3, got: $VERSION" >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "Tag ${VERSION} already exists" >&2
+            exit 1
+          fi
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Build binaries
+        run: |
+          mkdir -p "dist/cli/${VERSION}" "dist/agent/${VERSION}"
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -ldflags="-s -w" \
+              -o "dist/cli/${VERSION}/podlet-linux-${arch}" ./cmd/cli
+            CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -ldflags="-s -w" \
+              -o "dist/agent/${VERSION}/podlet-agent-linux-${arch}" ./cmd/agent
+          done
+
+      - name: Write checksums
+        run: |
+          (cd "dist/cli/${VERSION}" && sha256sum podlet-linux-* > checksums.txt)
+          (cd "dist/agent/${VERSION}" && sha256sum podlet-agent-linux-* > checksums.txt)
+
+      - name: Stamp version into installers
+        run: |
+          install -m 0755 internal/scripts/install-cli.sh dist/cli/install.sh
+          install -m 0755 internal/scripts/uninstall-cli.sh dist/cli/uninstall-cli.sh
+          install -m 0755 internal/scripts/install-agent.sh dist/agent/install.sh
+          install -m 0755 internal/scripts/uninstall-agent.sh dist/agent/uninstall-agent.sh
+
+          sed -i "s/^readonly CLI_VERSION=.*/readonly CLI_VERSION=\"${VERSION}\"/" dist/cli/install.sh
+          sed -i "s/^readonly AGENT_VERSION=.*/readonly AGENT_VERSION=\"${VERSION}\"/" dist/agent/install.sh
+
+          grep -qx "readonly CLI_VERSION=\"${VERSION}\"" dist/cli/install.sh
+          grep -qx "readonly AGENT_VERSION=\"${VERSION}\"" dist/agent/install.sh
+
+          for script in dist/cli/*.sh dist/agent/*.sh; do bash -n "$script"; done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+          if-no-files-found: error
+
+  publish:
+    name: Publish to R2 and GitHub
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+
+      - name: Upload versioned binaries to R2
+        run: |
+          for component in cli agent; do
+            aws s3 cp "dist/${component}/${VERSION}/" "s3://${R2_BUCKET}/${component}/${VERSION}/" \
+              --recursive --endpoint-url "$R2_ENDPOINT" \
+              --cache-control "public, max-age=31536000, immutable"
+          done
+
+      - name: Create GitHub release
+        run: |
+          mkdir release-assets
+          cp dist/cli/"${VERSION}"/podlet-linux-* release-assets/
+          cp dist/agent/"${VERSION}"/podlet-agent-linux-* release-assets/
+          cp "dist/cli/${VERSION}/checksums.txt" release-assets/checksums-cli.txt
+          cp "dist/agent/${VERSION}/checksums.txt" release-assets/checksums-agent.txt
+          cp dist/cli/install.sh release-assets/install-cli.sh
+          cp dist/cli/uninstall-cli.sh dist/agent/uninstall-agent.sh release-assets/
+          cp dist/agent/install.sh release-assets/install-agent.sh
+
+          gh release create "$VERSION" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$VERSION" \
+            --generate-notes
+
+      - name: Point the install scripts at this version
+        run: |
+          aws s3 cp dist/cli/install.sh "s3://${R2_BUCKET}/cli/install.sh" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
+          aws s3 cp dist/cli/uninstall-cli.sh "s3://${R2_BUCKET}/cli/uninstall-cli.sh" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
+          aws s3 cp dist/agent/install.sh "s3://${R2_BUCKET}/agent/install.sh" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
+          aws s3 cp dist/agent/uninstall-agent.sh "s3://${R2_BUCKET}/agent/uninstall-agent.sh" --endpoint-url "$R2_ENDPOINT" --cache-control "no-cache"
