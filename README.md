@@ -1,8 +1,16 @@
-# Podlet
+<h1 align="center">Podlet</h1>
 
-**Deploy a GitHub repo to your own server with one command.**
+<p align="center"><b>Deploy a GitHub repo to your own server with one command.</b></p>
 
-Podlet is a self-hosted deploy platform. Connect a repository, pick a server, and Podlet builds it, runs it in Docker and gives it a public HTTPS URL. There is no Dockerfile to write and no ports to open.
+<p align="center">
+  <a href="https://github.com/SudiMango/podlet/actions/workflows/ci.yml"><img src="https://github.com/SudiMango/podlet/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/SudiMango/podlet" alt="Go version"></a>
+</p>
+
+<p align="center">
+  Podlet is a self-hosted deploy platform. Connect a repository, pick a server, and Podlet builds it,<br>
+  runs it in Docker and gives it a public HTTPS URL. No Dockerfile to write and no ports to open.
+</p>
 
 <p align="center">
   <img src="docs/demo.gif" alt="podlet deploy demo" width="640">
