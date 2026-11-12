@@ -10,24 +10,18 @@ import (
 type DeployNewRepositoryChain struct{}
 
 func (DeployNewRepositoryChain) Execute(ctx context.Context, a *Agent, job *contract.ClaimJobResponse) error {
-	e := a.executors[dto.JobTypeCloneRepository]
-	if err := e.Execute(ctx, job); err != nil {
-		return err
+	steps := []dto.ChainStep{
+		{Name: contract.StepCloneRepository, JobType: dto.JobTypeCloneRepository},
+		{Name: contract.StepBuildImage, JobType: dto.JobTypeBuildRepository},
+		{Name: contract.StepCreateDnsRecord, JobType: dto.JobTypeCreateDnsRecord},
+		{Name: contract.StepRemovePrevDeploy, JobType: dto.JobTypeRemovePrevDeploy},
 	}
 
-	e = a.executors[dto.JobTypeBuildRepository]
-	if err := e.Execute(ctx, job); err != nil {
-		return err
-	}
-
-	e = a.executors[dto.JobTypeCreateDnsRecord]
-	if err := e.Execute(ctx, job); err != nil {
-		return err
-	}
-
-	e = a.executors[dto.JobTypeRemovePrevDeploy]
-	if err := e.Execute(ctx, job); err != nil {
-		return err
+	for _, s := range steps {
+		a.reportStep(ctx, job.Id, s.Name)
+		if err := a.executors[s.JobType].Execute(ctx, job); err != nil {
+			return err
+		}
 	}
 
 	return nil

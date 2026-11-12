@@ -4,72 +4,69 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
-	"github.com/SudiMango/podlet/internal/keyring"
+	"github.com/SudiMango/podlet/internal/cli/util"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
 type DeleteServerCommand struct{}
 
 func (DeleteServerCommand) Command() *cobra.Command {
-	var pending bool
-
-	cmd := &cobra.Command{
-		Use:   "delete [server-id]",
+	return &cobra.Command{
+		Use:   "delete",
 		Short: "Delete a registered or pending server",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return deleteServer(cmd, args[0], pending)
+			return deleteServer(cmd)
 		},
 	}
-
-	cmd.Flags().BoolVarP(
-		&pending,
-		"pending",
-		"p",
-		false,
-		"Delete a pending server instead of a registered server",
-	)
-
-	return cmd
 }
 
-func deleteServer(cmd *cobra.Command, serverId string, pending bool) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
-	// Delete server
-	api, err := client.New()
+func deleteServer(cmd *cobra.Command) error {
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
 
-	path := "/servers/" + serverId
-	serverType := "registered"
+	kind, err := util.Pick("Which kind of server?", []string{"Registered", "Pending"})
+	if err != nil {
+		return err
+	}
+	pending := kind == "Pending"
+
+	pick := util.PickServer
+	path := "/servers/"
 	if pending {
-		path = "/servers/pending/" + serverId
-		serverType = "pending"
+		pick = util.PickPendingServer
+		path = "/servers/pending/"
 	}
 
-	if _, err := api.DoJSON(
-		cmd.Context(),
-		http.MethodDelete,
-		path,
-		nil,
-		nil,
-		token,
-	); err != nil {
-		return fmt.Errorf("delete %s server: %w", serverType, err)
+	serverId, err := pick(cmd.Context(), api, token)
+	if err != nil {
+		return err
 	}
 
-	if pending {
-		fmt.Fprintf(cmd.OutOrStdout(), "pending server %s deleted successfully.\n", serverId)
+	ok, err := util.Confirm("Delete " + serverId + "?")
+	if err != nil {
+		return err
+	}
+	if !ok {
 		return nil
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "registered server %s marked for deletion. It will be removed when its agent checks in.\n", serverId)
+	util.PrintDivider()
+
+	if _, err := api.DoJSON(cmd.Context(), http.MethodDelete, path+serverId, nil, nil, token); err != nil {
+		return fmt.Errorf("delete %s server: %w", kind, err)
+	}
+
+	out := cmd.OutOrStdout()
+	if pending {
+		util.Tick.WithWriter(out).Printfln("Pending server %s deleted", serverId)
+		return nil
+	}
+
+	util.Tick.WithWriter(out).Printfln("Server %s marked for deletion", serverId)
+	fmt.Fprintln(out, pterm.FgGray.Sprint("It will be removed when its agent checks in."))
 	return nil
 }

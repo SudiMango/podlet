@@ -11,6 +11,7 @@ import (
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
 	"github.com/SudiMango/podlet/internal/keyring"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +31,7 @@ func (LoginCommand) Command() *cobra.Command {
 				return fmt.Errorf("save session token: %w", err)
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), "Logged in successfully")
+			util.Tick.WithWriter(cmd.OutOrStdout()).Println("Logged in")
 			return nil
 		},
 	}
@@ -57,7 +58,7 @@ func login(cmd *cobra.Command) (string, error) {
 
 	// Display login info on terminal
 	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "First copy your one-time code: %s\n", authorization.UserCode)
+	fmt.Fprintf(out, "Your one-time code: %s\n", pterm.Bold.Sprint(authorization.UserCode))
 	fmt.Fprintf(out, "Press Enter to open %s in your browser... ", authorization.VerificationURI)
 
 	if _, err := bufio.NewReader(cmd.InOrStdin()).ReadString('\n'); err != nil && !errors.Is(err, io.EOF) {
@@ -69,6 +70,11 @@ func login(cmd *cobra.Command) (string, error) {
 		fmt.Fprintf(out, "Failed opening a web browser at %s\n", authorization.VerificationURI)
 		fmt.Fprintf(out, "Open %s in your browser and enter code %s\n", authorization.VerificationURI, authorization.UserCode)
 	}
+
+	fmt.Fprintln(out)
+	util.PrintDivider()
+
+	spinner, _ := pterm.DefaultSpinner.Start("Waiting for you to authorize in the browser...")
 
 	// Complete login
 	headers, err := api.DoJSON(
@@ -84,8 +90,10 @@ func login(cmd *cobra.Command) (string, error) {
 		"",
 	)
 	if err != nil {
+		spinner.Stop()
 		return "", fmt.Errorf("complete login: %w", err)
 	}
+	spinner.Stop()
 
 	token := headers.Get("Set-Auth-Token")
 	if token == "" {

@@ -52,6 +52,14 @@ WHERE user_id = $1
     AND server_id = $2
     AND repository_id = $3;
 
+-- name: GetDnsRecordByJobIdAndUserId :one
+SELECT d.* FROM dns_records d
+JOIN server_agent_jobs j
+    ON j.server_id = d.server_id
+    AND j.repository_id = d.repository_id
+WHERE j.id = $1
+    AND j.user_id = $2;
+
 -- name: UpdateDnsRecordService :one
 UPDATE dns_records
 SET 

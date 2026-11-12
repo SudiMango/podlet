@@ -2,13 +2,11 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
 )
 
@@ -24,22 +22,25 @@ func (MeCommand) Command() *cobra.Command {
 				return err
 			}
 
-			encoder := json.NewEncoder(cmd.OutOrStdout())
-			encoder.SetIndent("", "  ")
-			return encoder.Encode(profile)
+			name := profile.FirstName
+			if profile.LastName != nil {
+				name += " " + *profile.LastName
+			}
+
+			return util.PrintFields(cmd.OutOrStdout(),
+				"User ID", profile.UserId,
+				"Name", name,
+				"Email", profile.Email,
+				"Created At", util.FormatTime(profile.CreatedAt),
+				"Updated At", util.FormatTime(profile.UpdatedAt),
+			)
 		},
 	}
 }
 
 func getCurrentProfile(ctx context.Context) (*contract.PodletProfileResponse, error) {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return nil, fmt.Errorf("load session token: %w; run `podlet auth login`", err)
-	}
-
 	// Fetch current user
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return nil, err
 	}

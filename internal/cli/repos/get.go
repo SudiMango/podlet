@@ -3,11 +3,10 @@ package repos
 import (
 	"fmt"
 	"net/http"
-	"text/tabwriter"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -25,14 +24,8 @@ func (ListCommand) Command() *cobra.Command {
 }
 
 func listRepos(cmd *cobra.Command) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w; run `podlet auth login`", err)
-	}
-
 	// Get repositories
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -52,21 +45,19 @@ func listRepos(cmd *cobra.Command) error {
 	// Print repositories to the console
 	out := cmd.OutOrStdout()
 	if len(response) == 0 {
-		fmt.Fprintln(out, "No connected GitHub repositories found. Run `podlet repos connect` to grant access.")
+		fmt.Fprintln(out, pterm.FgGray.Sprint("No connected GitHub repositories found. Run `podlet repos connect` to grant access."))
 		return nil
 	}
 
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(w, "REPOSITORY\tVISIBILITY\tDEFAULT BRANCH\tCLONE URL")
-
-	for _, repository := range response {
+	rows := make([][]string, len(response))
+	for i, repository := range response {
 		visibility := "public"
 		if repository.Private {
 			visibility = "private"
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", repository.FullName, visibility, repository.DefaultBranch, repository.CloneUrl)
+		rows[i] = []string{repository.FullName, visibility, repository.DefaultBranch, repository.CloneUrl}
 	}
 
-	return w.Flush()
+	return util.PrintTable(out, []string{"REPOSITORY", "VISIBILITY", "DEFAULT BRANCH", "CLONE URL"}, rows)
 }

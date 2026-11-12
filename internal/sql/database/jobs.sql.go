@@ -22,7 +22,7 @@ INSERT INTO server_agent_jobs (
     installation_id
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
+RETURNING id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at, step
 `
 
 type CreatePendingJobForServerParams struct {
@@ -58,12 +58,13 @@ func (q *Queries) CreatePendingJobForServer(ctx context.Context, arg CreatePendi
 		&i.InstallationID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Step,
 	)
 	return i, err
 }
 
 const getAllJobsByServerIdAndUserId = `-- name: GetAllJobsByServerIdAndUserId :many
-SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
+SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at, step
 FROM server_agent_jobs
 WHERE server_id = $1 AND user_id = $2
 ORDER BY created_at DESC
@@ -95,6 +96,7 @@ func (q *Queries) GetAllJobsByServerIdAndUserId(ctx context.Context, arg GetAllJ
 			&i.InstallationID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Step,
 		); err != nil {
 			return nil, err
 		}
@@ -107,7 +109,7 @@ func (q *Queries) GetAllJobsByServerIdAndUserId(ctx context.Context, arg GetAllJ
 }
 
 const getAllJobsByUserId = `-- name: GetAllJobsByUserId :many
-SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
+SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at, step
 FROM server_agent_jobs
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -134,6 +136,7 @@ func (q *Queries) GetAllJobsByUserId(ctx context.Context, userID pgtype.UUID) ([
 			&i.InstallationID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Step,
 		); err != nil {
 			return nil, err
 		}
@@ -146,7 +149,7 @@ func (q *Queries) GetAllJobsByUserId(ctx context.Context, userID pgtype.UUID) ([
 }
 
 const getJobByJobIdAndUserId = `-- name: GetJobByJobIdAndUserId :one
-SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
+SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at, step
 FROM server_agent_jobs
 WHERE id = $1 AND user_id = $2
 `
@@ -171,12 +174,13 @@ func (q *Queries) GetJobByJobIdAndUserId(ctx context.Context, arg GetJobByJobIdA
 		&i.InstallationID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Step,
 	)
 	return i, err
 }
 
 const getOldestJobByServerId = `-- name: GetOldestJobByServerId :one
-SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at
+SELECT id, user_id, server_id, job_status, job_type, error_message, repo_name, repository_id, installation_id, created_at, updated_at, step
 FROM server_agent_jobs
 WHERE
     server_id = $1
@@ -200,6 +204,7 @@ func (q *Queries) GetOldestJobByServerId(ctx context.Context, serverID string) (
 		&i.InstallationID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Step,
 	)
 	return i, err
 }
@@ -212,18 +217,20 @@ SET
         WHEN $1::server_job_status = 'failed' THEN $2
         ELSE NULL::TEXT
     END,
+    step = COALESCE($3::TEXT, step),
     updated_at = now()
-WHERE id = $3
-  AND server_id = $4
+WHERE id = $4
+  AND server_id = $5
   AND (
     (job_status = 'pending' AND $1::server_job_status = 'ongoing')
-    OR (job_status = 'ongoing' AND $1::server_job_status IN ('success', 'failed'))
+    OR (job_status = 'ongoing' AND $1::server_job_status IN ('ongoing', 'success', 'failed'))
   )
 `
 
 type ReportJobByServerIdAndJobIdParams struct {
 	JobStatus    ServerJobStatus
 	ErrorMessage pgtype.Text
+	Step         pgtype.Text
 	ID           string
 	ServerID     string
 }
@@ -232,6 +239,7 @@ func (q *Queries) ReportJobByServerIdAndJobId(ctx context.Context, arg ReportJob
 	result, err := q.db.Exec(ctx, reportJobByServerIdAndJobId,
 		arg.JobStatus,
 		arg.ErrorMessage,
+		arg.Step,
 		arg.ID,
 		arg.ServerID,
 	)

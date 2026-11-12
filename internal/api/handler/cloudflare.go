@@ -8,6 +8,7 @@ import (
 	"github.com/SudiMango/podlet/internal/api/service"
 	"github.com/SudiMango/podlet/internal/api/util"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/go-chi/chi/v5"
 )
 
 type CloudflareHandler struct {
@@ -143,4 +144,51 @@ func (h *CloudflareHandler) CreateDNSRecord(w http.ResponseWriter, r *http.Reque
 	}
 
 	util.SendJSON(w, http.StatusOK, dnsRecord)
+}
+
+/*
+Get the DNS record a job deployed to
+
+API URL: GET /jobs/{jobId}/deployment
+
+Args:
+
+	jobId: the id of the deploy job
+
+Returns:
+
+	the DNS record for the job's repository on its server (HTTP 200)
+
+Raises:
+
+	400: jobId missing
+	401: unauthenticated
+	404: no DNS record exists for the job
+	500: unable to retrieve the DNS record
+*/
+func (h *CloudflareHandler) GetDNSRecordByJobIdAndUserId(w http.ResponseWriter, r *http.Request) {
+	userId, ok := auth.CurrentUserID(r)
+	if !ok {
+		util.SendError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	jobId := chi.URLParam(r, "jobId")
+	if jobId == "" {
+		util.SendError(w, http.StatusBadRequest, errors.New("jobId is required"))
+		return
+	}
+
+	record, err := h.cloudflareService.GetDNSRecordByJobIdAndUserId(r.Context(), userId, jobId)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrCfDnsRecordNotFound):
+			util.SendError(w, http.StatusNotFound, err)
+		default:
+			util.SendError(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	util.SendJSON(w, http.StatusOK, record)
 }

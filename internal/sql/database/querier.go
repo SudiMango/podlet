@@ -23,6 +23,7 @@ type Querier interface {
 	GetAllJobsByServerIdAndUserId(ctx context.Context, arg GetAllJobsByServerIdAndUserIdParams) ([]ServerAgentJob, error)
 	GetAllJobsByUserId(ctx context.Context, userID pgtype.UUID) ([]ServerAgentJob, error)
 	GetDnsRecordByIdAndUserId(ctx context.Context, arg GetDnsRecordByIdAndUserIdParams) (DnsRecord, error)
+	GetDnsRecordByJobIdAndUserId(ctx context.Context, arg GetDnsRecordByJobIdAndUserIdParams) (DnsRecord, error)
 	GetDnsRecordByServerIdAndRepositoryId(ctx context.Context, arg GetDnsRecordByServerIdAndRepositoryIdParams) (DnsRecord, error)
 	GetDnsRecordsByUserId(ctx context.Context, userID pgtype.UUID) ([]DnsRecord, error)
 	GetDnsRecordsByUserIdAndTunnelId(ctx context.Context, arg GetDnsRecordsByUserIdAndTunnelIdParams) ([]DnsRecord, error)

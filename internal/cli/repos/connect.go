@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -23,14 +23,8 @@ func (ConnectCommand) Command() *cobra.Command {
 }
 
 func startInstallation(cmd *cobra.Command) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w; run `podlet auth login`", err)
-	}
-
 	// Start installation
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -48,7 +42,10 @@ func startInstallation(cmd *cobra.Command) error {
 	}
 
 	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "Your Installation URL: %s. It will expire by %s.\n", response.InstallationUrl, response.ExpiresAt.Local().Format("2006-01-02 15:04"))
+	fmt.Fprintln(out, "Open this URL to choose which repositories Podlet can read:")
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "  "+response.InstallationUrl)
+	fmt.Fprintln(out, pterm.FgGray.Sprintf("\nThe link expires at %s.", util.FormatTime(response.ExpiresAt)))
 
 	return nil
 }

@@ -11,7 +11,6 @@ func (JobCommand) Command() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		DeployCommand{}.Command(),
 		GetJobsCommand{}.Command(),
 	)
 

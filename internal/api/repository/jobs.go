@@ -76,6 +76,10 @@ func (r *JobRepository) ReportJobByServerIdAndJobId(ctx context.Context, serverI
 			String: request.Error,
 			Valid:  true,
 		},
+		Step: pgtype.Text{
+			String: string(request.Step),
+			Valid:  request.Step != "",
+		},
 	})
 	if err != nil {
 		return err
@@ -111,6 +115,7 @@ func (r *JobRepository) GetAllJobsByUserId(ctx context.Context, userId string) (
 			ServerId:     job.ServerID,
 			JobStatus:    contract.JobStatus(job.JobStatus),
 			ErrorMessage: errorMessage,
+			Step:         contract.ChainStep(job.Step.String),
 			JobType:      contract.JobType(job.JobType),
 			RepoName:     job.RepoName,
 			CreatedAt:    job.CreatedAt.Time,
@@ -150,6 +155,7 @@ func (r *JobRepository) GetAllJobsByServerIdAndUserId(ctx context.Context, userI
 			ServerId:     job.ServerID,
 			JobStatus:    contract.JobStatus(job.JobStatus),
 			ErrorMessage: errorMessage,
+			Step:         contract.ChainStep(job.Step.String),
 			JobType:      contract.JobType(job.JobType),
 			RepoName:     job.RepoName,
 			CreatedAt:    job.CreatedAt.Time,
@@ -187,6 +193,7 @@ func (r *JobRepository) GetJobByJobIdAndUserId(ctx context.Context, userId strin
 		ServerId:     job.ServerID,
 		JobStatus:    contract.JobStatus(job.JobStatus),
 		ErrorMessage: errorMessage,
+		Step:         contract.ChainStep(job.Step.String),
 		JobType:      contract.JobType(job.JobType),
 		RepoName:     job.RepoName,
 		CreatedAt:    job.CreatedAt.Time,

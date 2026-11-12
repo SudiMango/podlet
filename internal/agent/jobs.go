@@ -136,6 +136,16 @@ func (a *Agent) reportJobSucceeded(ctx context.Context, jobId string) error {
 	})
 }
 
+func (a *Agent) reportStep(ctx context.Context, jobId string, step contract.ChainStep) {
+	if err := a.reportJob(ctx, contract.ReportJobRequest{
+		JobId:     jobId,
+		JobStatus: contract.StatusOngoing,
+		Step:      step,
+	}); err != nil {
+		fmt.Fprintf(os.Stderr, "report step %q for job %s: %v\n", step, jobId, err)
+	}
+}
+
 func truncateError(message string) string {
 	const maxErrorLength = 4000
 	if len(message) <= maxErrorLength {

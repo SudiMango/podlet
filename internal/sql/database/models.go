@@ -172,6 +172,7 @@ type ServerAgentJob struct {
 	InstallationID int64
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
+	Step           pgtype.Text
 }
 
 type Session struct {

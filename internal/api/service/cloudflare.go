@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	ErrCfTunnelNotFound = errors.New("Tunnel with given userId and serverId not found.")
+	ErrCfTunnelNotFound    = errors.New("Tunnel with given userId and serverId not found.")
+	ErrCfDnsRecordNotFound = errors.New("No DNS record found for the given job.")
 )
 
 type CloudflareService struct {
@@ -89,6 +90,19 @@ func (s *CloudflareService) CreateDNSRecord(ctx context.Context, userId string, 
 
 	// Create new dns record if it doesn't exist
 	return s.createNewDnsRecord(ctx, userId, serverId, request)
+}
+
+func (s *CloudflareService) GetDNSRecordByJobIdAndUserId(ctx context.Context, userId string, jobId string) (*contract.DnsRecordResponse, error) {
+	result, err := s.cloudflareRepository.GetDNSRecordByJobIdAndUserId(ctx, userId, jobId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrCfDnsRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return result, nil
 }
 
 /*

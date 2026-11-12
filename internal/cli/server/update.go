@@ -3,61 +3,53 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"text/tabwriter"
+	"strings"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
 type UpdateServerCommand struct{}
 
 func (UpdateServerCommand) Command() *cobra.Command {
-	var name string
-
-	cmd := &cobra.Command{
-		Use:   "update [server-id]",
-		Short: "Update a registered server",
-		Args:  cobra.ExactArgs(1),
+	return &cobra.Command{
+		Use:   "update",
+		Short: "Rename a registered server",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			request := contract.UpdateServerRequest{
-				Name: &name,
-			}
-
-			err := updateRegisteredServer(cmd, args[0], request)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return updateRegisteredServer(cmd)
 		},
 	}
-
-	cmd.Flags().StringVar(
-		&name,
-		"name",
-		"",
-		"Update the name of a registered server",
-	)
-
-	cmd.MarkFlagRequired("name")
-
-	return cmd
 }
 
-func updateRegisteredServer(cmd *cobra.Command, serverId string, request contract.UpdateServerRequest) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
-	// Update server
-	api, err := client.New()
+func updateRegisteredServer(cmd *cobra.Command) error {
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
+	}
+
+	serverId, err := util.PickServer(cmd.Context(), api, token)
+	if err != nil {
+		return err
+	}
+
+	name, err := util.Input("New name (leave blank to keep current)")
+	if err != nil {
+		return err
+	}
+
+	util.PrintDivider()
+
+	request := contract.UpdateServerRequest{}
+	if name = strings.TrimSpace(name); name != "" {
+		request.Name = &name
+	}
+
+	if request.Name == nil {
+		fmt.Fprintln(cmd.OutOrStdout(), pterm.FgGray.Sprint("No changes made: name left blank, so it stays the same."))
+		return nil
 	}
 
 	var response contract.ServerResponse
@@ -72,17 +64,9 @@ func updateRegisteredServer(cmd *cobra.Command, serverId string, request contrac
 		return fmt.Errorf("update server: %w", err)
 	}
 
-	// Print server to console
 	out := cmd.OutOrStdout()
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
+	util.Tick.WithWriter(out).Println("Server updated")
+	fmt.Fprintln(out)
 
-	fmt.Fprintln(w, "Server updated successfully!")
-	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
-	fmt.Fprintf(w, "Name:\t%s\n", response.Name)
-	fmt.Fprintf(w, "Lifecycle State:\t%s\n", response.LifecycleState)
-	fmt.Fprintf(w, "Last Seen At:\t%s\n", util.FormatLastSeenAt(response.LastSeenAt))
-	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
-	fmt.Fprintf(w, "Updated At:\t%s\n", response.UpdatedAt.Local().Format("2006-01-02 15:04"))
-
-	return w.Flush()
+	return printServer(out, response)
 }

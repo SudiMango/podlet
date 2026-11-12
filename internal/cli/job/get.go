@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"text/tabwriter"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
-	"github.com/SudiMango/podlet/internal/keyring"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -40,14 +39,8 @@ func (GetJobsCommand) Command() *cobra.Command {
 }
 
 func getJobs(cmd *cobra.Command, serverId string, status string) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Get jobs
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -75,38 +68,29 @@ func getJobs(cmd *cobra.Command, serverId string, status string) error {
 	// Print jobs to console
 	out := cmd.OutOrStdout()
 	if len(response) == 0 {
-		fmt.Fprintln(out, "No jobs found.")
+		fmt.Fprintln(out, pterm.FgGray.Sprint("No jobs found."))
 		return nil
 	}
 
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
-
-	fmt.Fprintln(w, "ID\tSERVER ID\tREPOSITORY\tTYPE\tSTATUS\tCREATED AT\tUPDATED AT")
-
-	for _, job := range response {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+	rows := make([][]string, len(response))
+	for i, job := range response {
+		rows[i] = []string{
 			job.Id,
 			job.ServerId,
 			job.RepoName,
-			job.JobType,
-			job.JobStatus,
-			job.CreatedAt.Local().Format("2006-01-02 15:04"),
-			job.UpdatedAt.Local().Format("2006-01-02 15:04"),
-		)
+			string(job.JobType),
+			string(job.JobStatus),
+			util.FormatTime(job.CreatedAt),
+			util.FormatTime(job.UpdatedAt),
+		}
 	}
 
-	return w.Flush()
+	return util.PrintTable(out, []string{"ID", "SERVER ID", "REPOSITORY", "TYPE", "STATUS", "CREATED AT", "UPDATED AT"}, rows)
 }
 
 func getJob(cmd *cobra.Command, jobId string) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Get job
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}
@@ -125,18 +109,18 @@ func getJob(cmd *cobra.Command, jobId string) error {
 
 	// Print job to console
 	out := cmd.OutOrStdout()
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
-
-	fmt.Fprintf(w, "ID:\t%s\n", response.Id)
-	fmt.Fprintf(w, "Server ID:\t%s\n", response.ServerId)
-	fmt.Fprintf(w, "Repository:\t%s\n", response.RepoName)
-	fmt.Fprintf(w, "Type:\t%s\n", response.JobType)
-	fmt.Fprintf(w, "Status:\t%s\n", response.JobStatus)
-	fmt.Fprintf(w, "Created At:\t%s\n", response.CreatedAt.Local().Format("2006-01-02 15:04"))
-	fmt.Fprintf(w, "Updated At:\t%s\n", response.UpdatedAt.Local().Format("2006-01-02 15:04"))
+	fields := []string{
+		"ID", response.Id,
+		"Server ID", response.ServerId,
+		"Repository", response.RepoName,
+		"Type", string(response.JobType),
+		"Status", string(response.JobStatus),
+		"Created At", util.FormatTime(response.CreatedAt),
+		"Updated At", util.FormatTime(response.UpdatedAt),
+	}
 	if response.ErrorMessage != nil {
-		fmt.Fprintf(w, "Error:\t%s\n", *response.ErrorMessage)
+		fields = append(fields, "Error", *response.ErrorMessage)
 	}
 
-	return w.Flush()
+	return util.PrintFields(out, fields...)
 }

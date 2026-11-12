@@ -11,7 +11,7 @@ func FormatLastSeenAt(lastSeenAt *time.Time) string {
 		return "Never"
 	}
 
-	return lastSeenAt.Local().Format("2006-01-02 15:04")
+	return FormatTime(*lastSeenAt)
 }
 
 func OpenBrowser(url string) error {

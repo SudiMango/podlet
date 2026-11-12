@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SudiMango/podlet/internal/cli/client"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/keyring"
 	"github.com/spf13/cobra"
 )
@@ -21,21 +21,15 @@ func (LogoutCommand) Command() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), "Logged out successfully!")
+			util.Tick.WithWriter(cmd.OutOrStdout()).Println("Logged out")
 			return nil
 		},
 	}
 }
 
 func logout(cmd *cobra.Command) error {
-	// Load existing token
-	token, err := keyring.LoadToken()
-	if err != nil {
-		return fmt.Errorf("load session token: %w", err)
-	}
-
 	// Delete token from server
-	api, err := client.New()
+	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
 	}

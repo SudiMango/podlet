@@ -1,11 +1,13 @@
 package client
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/SudiMango/podlet/internal/cli/config"
 )
@@ -67,16 +69,7 @@ func (c *Client) DoJSON(
 	defer response.Body.Close()
 
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		var apiError struct {
-			Message string `json:"message"`
-		}
-
-		if err := json.NewDecoder(response.Body).Decode(&apiError); err == nil &&
-			apiError.Message != "" {
-			return nil, fmt.Errorf("%s", apiError.Message)
-		}
-
-		return nil, fmt.Errorf("API returned %s", response.Status)
+		return nil, apiError(response)
 	}
 
 	if output != nil {
@@ -86,4 +79,57 @@ func (c *Client) DoJSON(
 	}
 
 	return response.Header, nil
+}
+
+func (c *Client) Stream(
+	ctx context.Context,
+	path string,
+	token string,
+	onData func(data []byte) (done bool, err error),
+) error {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+path, nil)
+	if err != nil {
+		return fmt.Errorf("create request: %w", err)
+	}
+
+	request.Header.Set("Accept", "text/event-stream")
+	if token != "" {
+		request.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("send request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return apiError(response)
+	}
+
+	scanner := bufio.NewScanner(response.Body)
+	for scanner.Scan() {
+		data, ok := strings.CutPrefix(scanner.Text(), "data: ")
+		if !ok {
+			continue // blank separators and ": ping" keepalives
+		}
+
+		if done, err := onData([]byte(data)); err != nil || done {
+			return err
+		}
+	}
+
+	return scanner.Err()
+}
+
+func apiError(response *http.Response) error {
+	var body struct {
+		Message string `json:"message"`
+	}
+
+	if err := json.NewDecoder(response.Body).Decode(&body); err == nil && body.Message != "" {
+		return fmt.Errorf("%s", body.Message)
+	}
+
+	return fmt.Errorf("API returned %s", response.Status)
 }

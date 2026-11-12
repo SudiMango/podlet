@@ -27,3 +27,12 @@ const (
 	StatusSuccess JobStatus = "success"
 	StatusFailed  JobStatus = "failed"
 )
+
+type ChainStep string
+
+const (
+	StepCloneRepository  ChainStep = "Cloning repository"
+	StepBuildImage       ChainStep = "Building image"
+	StepCreateDnsRecord  ChainStep = "Creating DNS record"
+	StepRemovePrevDeploy ChainStep = "Removing previous deploy"
+)
