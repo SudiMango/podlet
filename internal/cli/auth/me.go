@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -23,9 +22,18 @@ func (MeCommand) Command() *cobra.Command {
 				return err
 			}
 
-			encoder := json.NewEncoder(cmd.OutOrStdout())
-			encoder.SetIndent("", "  ")
-			return encoder.Encode(profile)
+			name := profile.FirstName
+			if profile.LastName != nil {
+				name += " " + *profile.LastName
+			}
+
+			return util.PrintFields(cmd.OutOrStdout(),
+				"User ID", profile.UserId,
+				"Name", name,
+				"Email", profile.Email,
+				"Created At", util.FormatTime(profile.CreatedAt),
+				"Updated At", util.FormatTime(profile.UpdatedAt),
+			)
 		},
 	}
 }

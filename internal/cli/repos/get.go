@@ -6,6 +6,7 @@ import (
 
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +45,7 @@ func listRepos(cmd *cobra.Command) error {
 	// Print repositories to the console
 	out := cmd.OutOrStdout()
 	if len(response) == 0 {
-		fmt.Fprintln(out, "No connected GitHub repositories found. Run `podlet repos connect` to grant access.")
+		fmt.Fprintln(out, pterm.FgGray.Sprint("No connected GitHub repositories found. Run `podlet repos connect` to grant access."))
 		return nil
 	}
 

@@ -2,10 +2,12 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +18,7 @@ func (GetServerCommand) Command() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "get [server-id]",
-		Short: "Check your registed servers",
+		Short: "List servers, or show one (use -p for pending servers)",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if pending {
@@ -68,7 +70,7 @@ func getRegisteredServers(cmd *cobra.Command) error {
 	// Print servers to console
 	out := cmd.OutOrStdout()
 	if len(response) == 0 {
-		fmt.Fprintln(out, "No registered servers found.")
+		fmt.Fprintln(out, pterm.FgGray.Sprint("No registered servers found. Add one with `podlet servers add`."))
 		return nil
 	}
 
@@ -107,14 +109,17 @@ func getRegisteredServer(cmd *cobra.Command, serverId string) error {
 	}
 
 	// Print server to console
-	out := cmd.OutOrStdout()
+	return printServer(cmd.OutOrStdout(), response)
+}
+
+func printServer(out io.Writer, server contract.ServerResponse) error {
 	return util.PrintFields(out,
-		"ID", response.Id,
-		"Name", response.Name,
-		"Lifecycle State", string(response.LifecycleState),
-		"Last Seen At", util.FormatLastSeenAt(response.LastSeenAt),
-		"Created At", util.FormatTime(response.CreatedAt),
-		"Updated At", util.FormatTime(response.UpdatedAt),
+		"  ID", server.Id,
+		"  Name", server.Name,
+		"  Lifecycle State", string(server.LifecycleState),
+		"  Last Seen At", util.FormatLastSeenAt(server.LastSeenAt),
+		"  Created At", util.FormatTime(server.CreatedAt),
+		"  Updated At", util.FormatTime(server.UpdatedAt),
 	)
 }
 
@@ -140,7 +145,7 @@ func getPendingServers(cmd *cobra.Command) error {
 	// Print servers to console
 	out := cmd.OutOrStdout()
 	if len(response) == 0 {
-		fmt.Fprintln(out, "No pending servers found.")
+		fmt.Fprintln(out, pterm.FgGray.Sprint("No pending servers found."))
 		return nil
 	}
 
@@ -174,8 +179,8 @@ func getPendingServer(cmd *cobra.Command, serverId string) error {
 	// Print server to console
 	out := cmd.OutOrStdout()
 	return util.PrintFields(out,
-		"ID", response.Id,
-		"Created At", util.FormatTime(response.CreatedAt),
-		"Expires At", util.FormatTime(response.ExpiresAt),
+		"  ID", response.Id,
+		"  Created At", util.FormatTime(response.CreatedAt),
+		"  Expires At", util.FormatTime(response.ExpiresAt),
 	)
 }

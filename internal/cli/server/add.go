@@ -6,6 +6,7 @@ import (
 
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -15,19 +16,14 @@ func (AddServerCommand) Command() *cobra.Command {
 	return &cobra.Command{
 		Use:   "add",
 		Short: "Add a new server to your Podlet account",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := registerPendingServer(cmd)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return registerPendingServer(cmd)
 		},
 	}
 }
 
 func registerPendingServer(cmd *cobra.Command) error {
-	// Create pending server
 	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
@@ -46,7 +42,17 @@ func registerPendingServer(cmd *cobra.Command) error {
 	}
 
 	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "Created pending server with id %s. Use the following token when registering your server: %s. It will expire in 10 minutes.\n", response.Id, *response.RegistrationToken)
+	util.Tick.WithWriter(out).Println("Pending server created")
+	fmt.Fprintln(out)
 
+	if err := util.PrintFields(out,
+		"  ID", response.Id,
+		"  Registration Token", *response.RegistrationToken,
+		"  Expires At", util.FormatTime(response.ExpiresAt),
+	); err != nil {
+		return err
+	}
+
+	fmt.Fprintln(out, pterm.FgGray.Sprint("\nUse the registration token when installing the agent on your server."))
 	return nil
 }

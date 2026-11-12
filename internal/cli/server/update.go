@@ -3,52 +3,53 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
 type UpdateServerCommand struct{}
 
 func (UpdateServerCommand) Command() *cobra.Command {
-	var name string
-
-	cmd := &cobra.Command{
-		Use:   "update [server-id]",
-		Short: "Update a registered server",
-		Args:  cobra.ExactArgs(1),
+	return &cobra.Command{
+		Use:   "update",
+		Short: "Rename a registered server",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			request := contract.UpdateServerRequest{
-				Name: &name,
-			}
-
-			err := updateRegisteredServer(cmd, args[0], request)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return updateRegisteredServer(cmd)
 		},
 	}
-
-	cmd.Flags().StringVar(
-		&name,
-		"name",
-		"",
-		"Update the name of a registered server",
-	)
-
-	cmd.MarkFlagRequired("name")
-
-	return cmd
 }
 
-func updateRegisteredServer(cmd *cobra.Command, serverId string, request contract.UpdateServerRequest) error {
-	// Update server
+func updateRegisteredServer(cmd *cobra.Command) error {
 	api, token, err := util.NewAuthedClient()
 	if err != nil {
 		return err
+	}
+
+	serverId, err := util.PickServer(cmd.Context(), api, token)
+	if err != nil {
+		return err
+	}
+
+	name, err := util.Input("New name (leave blank to keep current)")
+	if err != nil {
+		return err
+	}
+
+	util.PrintDivider()
+
+	request := contract.UpdateServerRequest{}
+	if name = strings.TrimSpace(name); name != "" {
+		request.Name = &name
+	}
+
+	if request.Name == nil {
+		fmt.Fprintln(cmd.OutOrStdout(), pterm.FgGray.Sprint("No changes made: name left blank, so it stays the same."))
+		return nil
 	}
 
 	var response contract.ServerResponse
@@ -63,16 +64,9 @@ func updateRegisteredServer(cmd *cobra.Command, serverId string, request contrac
 		return fmt.Errorf("update server: %w", err)
 	}
 
-	// Print server to console
 	out := cmd.OutOrStdout()
-	fmt.Fprintln(out, "Server updated successfully!")
+	util.Tick.WithWriter(out).Println("Server updated")
+	fmt.Fprintln(out)
 
-	return util.PrintFields(out,
-		"ID", response.Id,
-		"Name", response.Name,
-		"Lifecycle State", string(response.LifecycleState),
-		"Last Seen At", util.FormatLastSeenAt(response.LastSeenAt),
-		"Created At", util.FormatTime(response.CreatedAt),
-		"Updated At", util.FormatTime(response.UpdatedAt),
-	)
+	return printServer(out, response)
 }

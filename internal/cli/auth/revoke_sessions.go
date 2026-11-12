@@ -21,7 +21,7 @@ func (RevokeSessionsCommand) Command() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), "Revoked all sessions and logged out successfully!")
+			util.Tick.WithWriter(cmd.OutOrStdout()).Println("Revoked all sessions and logged out")
 			return nil
 		},
 	}

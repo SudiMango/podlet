@@ -7,6 +7,7 @@ import (
 
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -67,7 +68,7 @@ func getJobs(cmd *cobra.Command, serverId string, status string) error {
 	// Print jobs to console
 	out := cmd.OutOrStdout()
 	if len(response) == 0 {
-		fmt.Fprintln(out, "No jobs found.")
+		fmt.Fprintln(out, pterm.FgGray.Sprint("No jobs found."))
 		return nil
 	}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/SudiMango/podlet/internal/contract"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +42,10 @@ func startInstallation(cmd *cobra.Command) error {
 	}
 
 	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "Your Installation URL: %s. It will expire by %s.\n", response.InstallationUrl, util.FormatTime(response.ExpiresAt))
+	fmt.Fprintln(out, "Open this URL to choose which repositories Podlet can read:")
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "  "+response.InstallationUrl)
+	fmt.Fprintln(out, pterm.FgGray.Sprintf("\nThe link expires at %s.", util.FormatTime(response.ExpiresAt)))
 
 	return nil
 }

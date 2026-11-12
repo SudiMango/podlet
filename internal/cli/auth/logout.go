@@ -21,7 +21,7 @@ func (LogoutCommand) Command() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), "Logged out successfully!")
+			util.Tick.WithWriter(cmd.OutOrStdout()).Println("Logged out")
 			return nil
 		},
 	}

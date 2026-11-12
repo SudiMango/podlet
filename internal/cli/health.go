@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/SudiMango/podlet/internal/cli/config"
+	"github.com/SudiMango/podlet/internal/cli/util"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ func (HealthCommand) Command() *cobra.Command {
 			defer response.Body.Close()
 
 			if response.StatusCode == http.StatusOK {
-				cmd.Println("Podlet is healthy")
+				util.Tick.WithWriter(cmd.OutOrStdout()).Println("Podlet is healthy")
 				return nil
 			}
 
