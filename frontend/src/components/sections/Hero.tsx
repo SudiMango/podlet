@@ -14,7 +14,7 @@ export function Hero() {
           From repository to running on your own server.<br className="desktop-break" />
           Deploy from your terminal. Keep control of your code.
         </p>
-        <a className="hero-docs" href="https://github.com/SudiMango/podlet#readme"><span>Get started with Podlet</span><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5" /></svg></a>
+        <a className="hero-docs" href="https://github.com/SudiMango/podlet#-getting-started"><span>Get started with Podlet</span><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5" /></svg></a>
         <div className="install-panel" id="install" aria-label="Install Podlet">
           <div className="install-panel-bar" aria-hidden="true">
             <span>Install Podlet</span>
