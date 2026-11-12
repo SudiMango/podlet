@@ -16,14 +16,18 @@
   <img src="docs/demo.gif" alt="podlet deploy demo" width="640">
 </p>
 
-## Why Podlet
+<br>
+
+## 💡 Why Podlet
 
 - **Your hardware.** Run apps on a VPS, a Raspberry Pi or a home server instead of paying per-app platform fees.
 - **No config.** Apps are built with [Railpack](https://railpack.com) on BuildKit, so Podlet detects the language and builds it.
 - **No open ports.** Each server connects out through a Cloudflare Tunnel, so it works behind NAT or a firewall.
 - **Live feedback.** `podlet deploy` streams each build step to your terminal over SSE.
 
-## How it works
+<br>
+
+## ⚙️ How it works
 
 ```
  podlet CLI ──▶ Podlet API ◀── agent (on your server)
@@ -36,7 +40,9 @@
 2. The **agent** on that server polls for jobs, then clones, builds and starts the app as a Docker container.
 3. The agent creates a DNS record and tunnel route for the app, then removes the previous deploy.
 
-## Getting started
+<br>
+
+## 🚀 Getting started
 
 **1. Install the CLI**
 
@@ -71,7 +77,9 @@ podlet deploy
 
 Add `-d` to queue the deploy and exit without watching it.
 
-## Commands (as of now)
+<br>
+
+## ⌨️ Commands (as of now)
 
 | Command | What it does |
 | --- | --- |
@@ -90,7 +98,9 @@ Add `-d` to queue the deploy and exit without watching it.
 | `podlet health` | Check that the API is reachable. |
 | `podlet uninstall` | Remove the CLI. |
 
-## Tech stack
+<br>
+
+## 🧰 Tech stack
 
 - **Go** for the API, CLI and server agent, in one module
 - **chi**, **uber/fx**, **Postgres** with **pgx** and **sqlc**, and **goose** migrations
@@ -98,7 +108,9 @@ Add `-d` to queue the deploy and exit without watching it.
 - **Docker**, **Railpack/BuildKit** and **Cloudflare Tunnel** for builds and routing
 - **Next.js** for the landing page
 
-## Project layout
+<br>
+
+## 🗂️ Project layout
 
 ```
 cmd/                 api, cli and agent entrypoints
@@ -109,7 +121,9 @@ internal/contract/   request and response types shared by all three
 frontend/            landing page
 ```
 
-## Current limitations
+<br>
+
+## ⚠️ Current limitations
 
 - The agent runs one job at a time.
 - Linux (amd64) servers only.
@@ -117,7 +131,9 @@ frontend/            landing page
 - No environment variables, so apps that need secrets or config can't be deployed yet.
 - No log viewing, and no commands to redeploy or delete a deployment.
 
-## Coming soon
+<br>
+
+## 🔭 Coming soon
 
 - Monorepo support
 - Hosted Postgres databases
@@ -125,6 +141,8 @@ frontend/            landing page
 - Logs and metrics
 - Redeploy and delete-deployment commands
 
-## Feedback
+<br>
+
+## 💬 Feedback
 
 Podlet is early, and I'm deciding what to build next from what people ask for. Open an [issue](https://github.com/SudiMango/podlet/issues) to report a bug, request a feature, or tell me what you'd want to deploy. Upvote existing issues with a 👍 so I can see what matters most.
