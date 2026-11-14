@@ -27,6 +27,7 @@ var (
 	ErrInvalidEnvKey   = errors.New("Env var key must start with a letter or underscore, contain only letters, numbers, and underscores, and be at most 64 characters.")
 	ErrInvalidEnvValue = errors.New("Env var value must be between 1 and 4096 characters.")
 	ErrEnvVarNotFound  = errors.New("Env var doesn't exist.")
+	ErrEnvVarExists    = errors.New("Env var already exists. Delete it first to change its value.")
 
 	envKeyPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
@@ -86,13 +87,18 @@ func (s *EnvVarService) CreateEnvVarByUserIdAndRepoName(ctx context.Context, use
 		return nil, err
 	}
 
-	return s.envVarRepository.CreateEnvVarByUserIdAndRepoId(ctx, userId, dto.CreateEnvVarRequest{
+	created, err := s.envVarRepository.CreateEnvVarByUserIdAndRepoId(ctx, userId, dto.CreateEnvVarRequest{
 		Id:             util.GenerateID(envVarPrefix),
 		Key:            request.Key,
 		ValueEncrypted: encrypted,
 		RepositoryId:   repo.Id,
 		RepoName:       repo.FullName,
 	})
+	if util.IsUniqueViolation(err) {
+		return nil, ErrEnvVarExists
+	}
+
+	return created, err
 }
 
 func (s *EnvVarService) GetEnvVarsByUserIdAndRepoName(ctx context.Context, userId string, repoName string) (*contract.EnvVarsResponse, error) {

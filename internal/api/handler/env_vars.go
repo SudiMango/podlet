@@ -40,6 +40,7 @@ Raises:
 
 	400: invalid body, key, value or repository name
 	401: unauthorized user
+	409: the environment variable already exists
 	500: unable to create the environment variable
 */
 func (h *EnvVarHandler) CreateEnvVarByUserIdAndRepoName(w http.ResponseWriter, r *http.Request) {
@@ -228,6 +229,8 @@ func sendEnvVarError(w http.ResponseWriter, err error) {
 		util.SendError(w, http.StatusBadRequest, err)
 	case errors.Is(err, service.ErrEnvVarNotFound):
 		util.SendError(w, http.StatusNotFound, err)
+	case errors.Is(err, service.ErrEnvVarExists):
+		util.SendError(w, http.StatusConflict, err)
 	default:
 		util.SendError(w, http.StatusInternalServerError, err)
 	}

@@ -20,8 +20,6 @@ INSERT INTO env_vars (
     repository_id
 )
 VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (user_id, repository_id, key)
-DO UPDATE SET value_encrypted = EXCLUDED.value_encrypted
 RETURNING id, key, user_id, repository_id, created_at
 `
 
