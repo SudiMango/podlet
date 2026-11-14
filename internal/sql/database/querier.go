@@ -12,11 +12,14 @@ import (
 
 type Querier interface {
 	CreateDnsRecord(ctx context.Context, arg CreateDnsRecordParams) (DnsRecord, error)
+	CreateEnvVarByUserIdAndRepoId(ctx context.Context, arg CreateEnvVarByUserIdAndRepoIdParams) (CreateEnvVarByUserIdAndRepoIdRow, error)
 	CreateInstallationStateByUserId(ctx context.Context, arg CreateInstallationStateByUserIdParams) (GithubInstallationState, error)
 	CreatePendingJobForServer(ctx context.Context, arg CreatePendingJobForServerParams) (ServerAgentJob, error)
 	CreatePendingServerByUserId(ctx context.Context, arg CreatePendingServerByUserIdParams) (PendingServer, error)
 	CreateServerByUserId(ctx context.Context, arg CreateServerByUserIdParams) (Server, error)
 	CreateTunnel(ctx context.Context, arg CreateTunnelParams) (Tunnel, error)
+	DeleteAllEnvVarsByUserIdAndRepoId(ctx context.Context, arg DeleteAllEnvVarsByUserIdAndRepoIdParams) error
+	DeleteEnvVarByUserIdAndRepoId(ctx context.Context, arg DeleteEnvVarByUserIdAndRepoIdParams) (int64, error)
 	DeleteGithubInstallationState(ctx context.Context, id string) error
 	DeletePendingServerByUserIdAndPendingServerId(ctx context.Context, arg DeletePendingServerByUserIdAndPendingServerIdParams) (int64, error)
 	DeleteServerByUserIdAndServerId(ctx context.Context, arg DeleteServerByUserIdAndServerIdParams) (int64, error)
@@ -27,6 +30,8 @@ type Querier interface {
 	GetDnsRecordByServerIdAndRepositoryId(ctx context.Context, arg GetDnsRecordByServerIdAndRepositoryIdParams) (DnsRecord, error)
 	GetDnsRecordsByUserId(ctx context.Context, userID pgtype.UUID) ([]DnsRecord, error)
 	GetDnsRecordsByUserIdAndTunnelId(ctx context.Context, arg GetDnsRecordsByUserIdAndTunnelIdParams) ([]DnsRecord, error)
+	GetEnvVarsByUserIdAndRepoId(ctx context.Context, arg GetEnvVarsByUserIdAndRepoIdParams) ([]GetEnvVarsByUserIdAndRepoIdRow, error)
+	GetEnvVarsByUserIdAndRepoIdForAgent(ctx context.Context, arg GetEnvVarsByUserIdAndRepoIdForAgentParams) ([]GetEnvVarsByUserIdAndRepoIdForAgentRow, error)
 	GetGithubInstallationsByUserId(ctx context.Context, userID pgtype.UUID) ([]GithubInstallation, error)
 	GetJobByJobIdAndUserId(ctx context.Context, arg GetJobByJobIdAndUserIdParams) (ServerAgentJob, error)
 	GetOldestJobByServerId(ctx context.Context, serverID string) (ServerAgentJob, error)

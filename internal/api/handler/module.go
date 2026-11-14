@@ -10,5 +10,6 @@ var Module = fx.Module("service",
 		NewGithubHandler,
 		NewJobHandler,
 		NewCloudflareHandler,
+		NewEnvVarHandler,
 	),
 )
