@@ -123,6 +123,15 @@ type DnsRecord struct {
 	UpdatedAt    pgtype.Timestamptz
 }
 
+type EnvVar struct {
+	ID             string
+	Key            string
+	ValueEncrypted string
+	UserID         pgtype.UUID
+	RepositoryID   int64
+	CreatedAt      pgtype.Timestamptz
+}
+
 type GithubInstallation struct {
 	ID                  int64
 	UserID              pgtype.UUID
