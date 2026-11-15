@@ -225,6 +225,7 @@ func sendEnvVarError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, service.ErrInvalidEnvKey),
 		errors.Is(err, service.ErrInvalidEnvValue),
+		errors.Is(err, service.ErrReservedEnvKey),
 		errors.Is(err, service.ErrInvalidRepoName):
 		util.SendError(w, http.StatusBadRequest, err)
 	case errors.Is(err, service.ErrEnvVarNotFound):

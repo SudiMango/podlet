@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 
 	"github.com/SudiMango/podlet/internal/api/dto"
 	"github.com/SudiMango/podlet/internal/api/repository"
@@ -25,11 +26,13 @@ const (
 
 var (
 	ErrInvalidEnvKey   = errors.New("Env var key must start with a letter or underscore, contain only letters, numbers, and underscores, and be at most 64 characters.")
+	ErrReservedEnvKey  = errors.New("Env var with this name is not allowed. Please try another name.")
 	ErrInvalidEnvValue = errors.New("Env var value must be between 1 and 4096 characters.")
 	ErrEnvVarNotFound  = errors.New("Env var doesn't exist.")
 	ErrEnvVarExists    = errors.New("Env var already exists. Delete it first to change its value.")
 
-	envKeyPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+	envKeyPattern   = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+	reservedEnvKeys = []string{"PATH", "HOME", "USER", "BUILDKIT_HOST", "DOCKER_HOST", "DOCKER_CONFIG", "LD_PRELOAD", "LD_LIBRARY_PATH"}
 )
 
 type EnvVarService struct {
@@ -75,6 +78,10 @@ func (s *EnvVarService) CreateEnvVarByUserIdAndRepoName(ctx context.Context, use
 	}
 	if request.Value == "" || len(request.Value) > maxEnvValueLen {
 		return nil, ErrInvalidEnvValue
+	}
+
+	if slices.Contains(reservedEnvKeys, request.Key) {
+		return nil, ErrReservedEnvKey
 	}
 
 	repo, err := s.githubService.GetGithubRepositoryByFullName(ctx, userId, request.RepoName)
