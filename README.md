@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/SudiMango/podlet/actions/workflows/ci.yml"><img src="https://github.com/SudiMango/podlet/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/SudiMango/podlet/releases"><img src="https://img.shields.io/github/v/release/SudiMango/podlet?include_prereleases" alt="Latest release"></a>
   <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/SudiMango/podlet" alt="Go version"></a>
 </p>
 

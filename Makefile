@@ -3,7 +3,7 @@ ifneq (,$(wildcard .env))
     export
 endif
 
-.PHONY: api podlet sqlc migration-up migration-down migration-new db db-down seed DB_CHECK setup agent
+.PHONY: api podlet sqlc migration-up migration-down migration-new db db-down seed DB_CHECK setup agent dev
 .DEFAULT_GOAL := api
 
 POSTGRES_HOST ?= localhost
@@ -17,6 +17,11 @@ setup:
 	go mod download
 
 # run apps
+
+dev:
+	docker compose -f compose.db.yaml up -d --wait
+	sudo -v
+	npx --yes concurrently -n api,agent -c blue,green --kill-others "make api" "make agent"
 
 api:
 	go run cmd/api/main.go

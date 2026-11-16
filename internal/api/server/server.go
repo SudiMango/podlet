@@ -33,6 +33,7 @@ type RouterParams struct {
 	GithubHandler     *handler.GithubHandler
 	JobHandler        *handler.JobHandler
 	CloudflareHandler *handler.CloudflareHandler
+	EnvVarHandler     *handler.EnvVarHandler
 }
 
 func provideRouter(params RouterParams) *chi.Mux {
@@ -69,6 +70,13 @@ func provideRouter(params RouterParams) *chi.Mux {
 			r.Post("/deploy", params.JobHandler.CreatePendingJobForServer)
 		})
 
+		r.Route("/env", func(r chi.Router) {
+			r.Post("/", params.EnvVarHandler.CreateEnvVarByUserIdAndRepoName)
+			r.Get("/", params.EnvVarHandler.GetEnvVarsByUserIdAndRepoName)
+			r.Delete("/", params.EnvVarHandler.DeleteEnvVarByUserIdAndRepoName)
+			r.Delete("/all", params.EnvVarHandler.DeleteAllEnvVarsByUserIdAndRepoName)
+		})
+
 		r.Route("/jobs", func(r chi.Router) {
 			r.Get("/", params.JobHandler.GetAllJobsByUserId)
 			r.Get("/{jobId}", params.JobHandler.GetJobByJobIdAndUserId)
@@ -90,6 +98,7 @@ func provideRouter(params RouterParams) *chi.Mux {
 
 			r.Get("/cftunnel", params.CloudflareHandler.GetTunnelByUserIdAndServerId)
 			r.Post("/cftunnel", params.CloudflareHandler.CreateTunnel)
+			r.Get("/env", params.EnvVarHandler.GetEnvVarsForAgent)
 			r.Post("/cfdns", params.CloudflareHandler.CreateDNSRecord)
 		})
 	})

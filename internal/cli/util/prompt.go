@@ -15,6 +15,18 @@ type EmptyError struct{ Msg string }
 
 func (e *EmptyError) Error() string { return e.Msg }
 
+type DisplayError struct{ Err error }
+
+func (e *DisplayError) Error() string { return e.Err.Error() }
+func (e *DisplayError) Unwrap() error { return e.Err }
+
+func Display(err error) error {
+	if err == nil {
+		return nil
+	}
+	return &DisplayError{Err: err}
+}
+
 func Pick(prompt string, options []string) (string, error) {
 	if len(options) == 0 {
 		return "", &EmptyError{Msg: "Nothing to choose from."}

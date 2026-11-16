@@ -7,6 +7,7 @@ import (
 
 	authcmd "github.com/SudiMango/podlet/internal/cli/auth"
 	deploycmd "github.com/SudiMango/podlet/internal/cli/deploy"
+	envcmd "github.com/SudiMango/podlet/internal/cli/env"
 	jobcmd "github.com/SudiMango/podlet/internal/cli/job"
 	reposcmd "github.com/SudiMango/podlet/internal/cli/repos"
 	servercmd "github.com/SudiMango/podlet/internal/cli/server"
@@ -39,6 +40,7 @@ func (RootCommand) Command() *cobra.Command {
 		authcmd.AuthCommand{}.Command(),
 		servercmd.ServerCommand{}.Command(),
 		reposcmd.ReposCommand{}.Command(),
+		envcmd.EnvCommand{}.Command(),
 		jobcmd.JobCommand{}.Command(),
 		deploycmd.DeployCommand{}.Command(),
 	)
@@ -52,6 +54,12 @@ func (r RootCommand) Execute() {
 		if errors.As(err, &empty) {
 			fmt.Fprintln(os.Stderr, pterm.FgGray.Sprint(empty.Msg))
 			return
+		}
+
+		var display *util.DisplayError
+		if errors.As(err, &display) {
+			util.Cross.WithWriter(os.Stderr).Println(display.Error())
+			os.Exit(1)
 		}
 
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
